@@ -4,12 +4,17 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
+from backtesting import run_signal_backtest, summarize_backtest
 from fetch_market_data import get_klines
 from report_generator import generate_markdown_report
 from strategy_rules import generate_basic_signal
 
 
 SYMBOLS = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT"]
+BACKTEST_SYMBOL = "BTCUSDT"
+BACKTEST_CANDLE_LIMIT = 180
+BACKTEST_LOOKBACK_WINDOW = 21
+BACKTEST_FORWARD_DAYS = 7
 WATCH_SIGNALS = ["WATCH_BUY", "OVERSOLD_WATCH"]
 AVOID_SIGNALS = ["WEAKNESS_AVOID", "OVERBOUGHT_WAIT", "OVERSOLD_BUT_WEAK"]
 DATA_FOLDER = Path("data")
@@ -17,6 +22,8 @@ REPORTS_FOLDER = Path("reports")
 LATEST_CSV_PATH = DATA_FOLDER / "kairon_analysis_latest.csv"
 HISTORY_CSV_PATH = DATA_FOLDER / "kairon_analysis_history.csv"
 LATEST_MARKDOWN_REPORT_PATH = REPORTS_FOLDER / "kairon_market_report_latest.md"
+BACKTEST_CSV_PATH = DATA_FOLDER / "kairon_backtest_btcusdt.csv"
+BACKTEST_SUMMARY_PATH = REPORTS_FOLDER / "kairon_backtest_summary.md"
 CSV_COLUMNS = [
     "timestamp",
     "symbol",
@@ -25,6 +32,16 @@ CSV_COLUMNS = [
     "sma_21",
     "rsi_14",
     "change_7d",
+    "signal",
+    "explanation",
+]
+BACKTEST_CSV_COLUMNS = [
+    "date",
+    "symbol",
+    "current_price",
+    "future_price",
+    "forward_days",
+    "forward_return_pct",
     "signal",
     "explanation",
 ]
@@ -176,6 +193,147 @@ def write_markdown_report(analyses: list[dict], summary: dict) -> None:
         print(f"Markdown report failed: {error}")
 
 
+def _format_signal_return_line(signal: str, average_return: float, count: int) -> str:
+    """Format one signal summary line."""
+    return f"- {signal}: {average_return:.2f}% across {count} signal(s)"
+
+
+def print_backtest_summary(symbol: str, summary: dict) -> None:
+    """Print a beginner-friendly educational backtest summary."""
+    print()
+    print("Kairon Crypto Agent — Simple Backtest")
+    print(f"Symbol: {symbol}")
+    print(f"Total signals: {summary['total_signals']}")
+    print(
+        "Average 7-day forward return: "
+        f"{summary['average_forward_return']:.2f}%"
+    )
+    print("Average return by signal:")
+
+    if not summary["average_forward_return_by_signal"]:
+        print("- none")
+    else:
+        for signal, average_return in summary[
+            "average_forward_return_by_signal"
+        ].items():
+            count = summary["count_by_signal"][signal]
+            print(_format_signal_return_line(signal, average_return, count))
+
+    print(f"Best signal: {summary['best_signal_by_average_return']}")
+    print(f"Worst signal: {summary['worst_signal_by_average_return']}")
+    print(
+        "Note: this educational backtest reviews historical behavior and is not "
+        "proof of future performance."
+    )
+
+
+def write_backtest_csv(results: list[dict]) -> None:
+    """Export detailed educational backtest results to CSV."""
+    if not results:
+        print("Backtest CSV export skipped: no results to save.")
+        return
+
+    try:
+        DATA_FOLDER.mkdir(exist_ok=True)
+        with BACKTEST_CSV_PATH.open("w", newline="", encoding="utf-8") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=BACKTEST_CSV_COLUMNS)
+            writer.writeheader()
+            writer.writerows(results)
+        print(f"Backtest CSV saved: {BACKTEST_CSV_PATH}")
+    except OSError as error:
+        print(f"Backtest CSV export failed: {error}")
+
+
+def generate_backtest_summary_markdown(symbol: str, summary: dict) -> str:
+    """Generate a Markdown summary for the educational backtest."""
+    timestamp = datetime.now().isoformat(timespec="seconds")
+    lines = [
+        "# Kairon Crypto Agent — Backtest Summary",
+        "",
+        "## Timestamp",
+        "",
+        timestamp,
+        "",
+        "## Backtest Setup",
+        "",
+        f"- Symbol: {symbol}",
+        f"- Candle history: last {BACKTEST_CANDLE_LIMIT} daily candles",
+        f"- Lookback window: {BACKTEST_LOOKBACK_WINDOW} candles",
+        f"- Forward return window: {BACKTEST_FORWARD_DAYS} days",
+        "",
+        "## Results",
+        "",
+        f"- Total signals: {summary['total_signals']}",
+        (
+            "- Average 7-day forward return: "
+            f"{summary['average_forward_return']:.2f}%"
+        ),
+        f"- Best signal: {summary['best_signal_by_average_return']}",
+        f"- Worst signal: {summary['worst_signal_by_average_return']}",
+        "",
+        "## Average Return by Signal",
+        "",
+    ]
+
+    if not summary["average_forward_return_by_signal"]:
+        lines.append("- none")
+    else:
+        for signal, average_return in summary[
+            "average_forward_return_by_signal"
+        ].items():
+            count = summary["count_by_signal"][signal]
+            lines.append(_format_signal_return_line(signal, average_return, count))
+
+    lines.extend(
+        [
+            "",
+            "## Educational Note",
+            "",
+            (
+                "This backtest is for educational analysis only. It reviews how "
+                "historical Kairon signals behaved over a later 7-day window, but "
+                "it is not proof of future performance and does not execute trades."
+            ),
+            "",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def write_backtest_summary_markdown(symbol: str, summary: dict) -> None:
+    """Export the educational backtest summary to Markdown."""
+    try:
+        REPORTS_FOLDER.mkdir(exist_ok=True)
+        summary_text = generate_backtest_summary_markdown(symbol, summary)
+        BACKTEST_SUMMARY_PATH.write_text(summary_text, encoding="utf-8")
+        print(f"Backtest summary saved: {BACKTEST_SUMMARY_PATH}")
+    except OSError as error:
+        print(f"Backtest summary export failed: {error}")
+
+
+def run_btc_backtest() -> None:
+    """Run the simple BTCUSDT educational backtest using public market data."""
+    try:
+        candles = get_klines(BACKTEST_SYMBOL, interval="1d", limit=BACKTEST_CANDLE_LIMIT)
+    except RuntimeError as error:
+        print()
+        print(f"Backtest unavailable: {error}")
+        return
+
+    results = run_signal_backtest(
+        BACKTEST_SYMBOL,
+        candles,
+        lookback_window=BACKTEST_LOOKBACK_WINDOW,
+        forward_days=BACKTEST_FORWARD_DAYS,
+    )
+    summary = summarize_backtest(results)
+
+    print_backtest_summary(BACKTEST_SYMBOL, summary)
+    write_backtest_csv(results)
+    write_backtest_summary_markdown(BACKTEST_SYMBOL, summary)
+
+
 def main() -> None:
     """Run the public multi-asset analysis report."""
     analyses = []
@@ -196,6 +354,7 @@ def main() -> None:
     print_summary(summary)
     write_csv_exports(analyses)
     write_markdown_report(analyses, summary)
+    run_btc_backtest()
 
 
 if __name__ == "__main__":
