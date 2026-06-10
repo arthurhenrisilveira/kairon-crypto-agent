@@ -2,7 +2,7 @@
 
 ## Timestamp
 
-2026-06-10T16:50:58
+2026-06-10T17:01:55
 
 ## Market Condition
 
@@ -10,8 +10,8 @@ Defensive
 
 ## Executive Summary
 
-- Strongest asset: BTCUSDT (-3.39%)
-- Weakest asset: SOLUSDT (-11.19%)
+- Strongest asset: BTCUSDT (-3.61%)
+- Weakest asset: SOLUSDT (-11.42%)
 - Assets to watch: none
 - Assets to avoid: BTCUSDT, ETHUSDT, BNBUSDT, SOLUSDT
 - Market interpretation: Multiple assets are showing weakness or fragile oversold conditions, so caution is the dominant message.
@@ -20,41 +20,41 @@ Defensive
 
 ### BTCUSDT
 
-- Current price: 61967.15
-- SMA 7: 62277.46
-- SMA 21: 69884.05
-- RSI 14: 16.62
-- 7-day change: -3.39%
+- Current price: 61825.99
+- SMA 7: 62257.30
+- SMA 21: 69877.33
+- RSI 14: 15.99
+- 7-day change: -3.61%
 - Signal: OVERSOLD_BUT_WEAK
 - Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
 
 ### ETHUSDT
 
-- Current price: 1630.47
-- SMA 7: 1653.55
-- SMA 21: 1901.77
-- RSI 14: 20.17
-- 7-day change: -10.07%
+- Current price: 1626.58
+- SMA 7: 1652.99
+- SMA 21: 1901.58
+- RSI 14: 20.05
+- 7-day change: -10.28%
 - Signal: OVERSOLD_BUT_WEAK
 - Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
 
 ### BNBUSDT
 
-- Current price: 588.37
-- SMA 7: 591.34
-- SMA 21: 638.32
-- RSI 14: 39.42
-- 7-day change: -5.20%
+- Current price: 587.30
+- SMA 7: 591.19
+- SMA 21: 638.27
+- RSI 14: 39.28
+- 7-day change: -5.37%
 - Signal: WEAKNESS_AVOID
 - Explanation: Price is below both moving averages, suggesting short-term weakness.
 
 ### SOLUSDT
 
-- Current price: 63.60
-- SMA 7: 65.23
-- SMA 21: 76.53
-- RSI 14: 18.02
-- 7-day change: -11.19%
+- Current price: 63.43
+- SMA 7: 65.20
+- SMA 21: 76.52
+- RSI 14: 17.92
+- 7-day change: -11.42%
 - Signal: OVERSOLD_BUT_WEAK
 - Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
 

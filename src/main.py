@@ -24,6 +24,10 @@ HISTORY_CSV_PATH = DATA_FOLDER / "kairon_analysis_history.csv"
 LATEST_MARKDOWN_REPORT_PATH = REPORTS_FOLDER / "kairon_market_report_latest.md"
 BACKTEST_CSV_PATH = DATA_FOLDER / "kairon_backtest_btcusdt.csv"
 BACKTEST_SUMMARY_PATH = REPORTS_FOLDER / "kairon_backtest_summary.md"
+MULTI_ASSET_BACKTEST_CSV_PATH = DATA_FOLDER / "kairon_backtest_multi_asset.csv"
+MULTI_ASSET_BACKTEST_SUMMARY_PATH = (
+    REPORTS_FOLDER / "kairon_multi_asset_backtest_summary.md"
+)
 CSV_COLUMNS = [
     "timestamp",
     "symbol",
@@ -227,7 +231,7 @@ def print_backtest_summary(symbol: str, summary: dict) -> None:
     )
 
 
-def write_backtest_csv(results: list[dict]) -> None:
+def write_backtest_csv(results: list[dict], csv_path: Path = BACKTEST_CSV_PATH) -> None:
     """Export detailed educational backtest results to CSV."""
     if not results:
         print("Backtest CSV export skipped: no results to save.")
@@ -235,11 +239,11 @@ def write_backtest_csv(results: list[dict]) -> None:
 
     try:
         DATA_FOLDER.mkdir(exist_ok=True)
-        with BACKTEST_CSV_PATH.open("w", newline="", encoding="utf-8") as csv_file:
+        with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames=BACKTEST_CSV_COLUMNS)
             writer.writeheader()
             writer.writerows(results)
-        print(f"Backtest CSV saved: {BACKTEST_CSV_PATH}")
+        print(f"Backtest CSV saved: {csv_path}")
     except OSError as error:
         print(f"Backtest CSV export failed: {error}")
 
@@ -312,26 +316,207 @@ def write_backtest_summary_markdown(symbol: str, summary: dict) -> None:
         print(f"Backtest summary export failed: {error}")
 
 
-def run_btc_backtest() -> None:
-    """Run the simple BTCUSDT educational backtest using public market data."""
+def run_backtest_for_symbol(symbol: str) -> tuple[list[dict], dict] | None:
+    """Run one educational backtest using public Binance market data."""
     try:
-        candles = get_klines(BACKTEST_SYMBOL, interval="1d", limit=BACKTEST_CANDLE_LIMIT)
+        candles = get_klines(symbol, interval="1d", limit=BACKTEST_CANDLE_LIMIT)
     except RuntimeError as error:
         print()
-        print(f"Backtest unavailable: {error}")
-        return
+        print(f"Backtest unavailable for {symbol}: {error}")
+        return None
 
     results = run_signal_backtest(
-        BACKTEST_SYMBOL,
+        symbol,
         candles,
         lookback_window=BACKTEST_LOOKBACK_WINDOW,
         forward_days=BACKTEST_FORWARD_DAYS,
     )
     summary = summarize_backtest(results)
+    return results, summary
+
+
+def run_btc_backtest() -> tuple[list[dict], dict] | None:
+    """Run and export the existing BTCUSDT educational backtest."""
+    backtest = run_backtest_for_symbol(BACKTEST_SYMBOL)
+    if backtest is None:
+        return None
+
+    results, summary = backtest
 
     print_backtest_summary(BACKTEST_SYMBOL, summary)
     write_backtest_csv(results)
     write_backtest_summary_markdown(BACKTEST_SYMBOL, summary)
+    return results, summary
+
+
+def build_asset_summary(symbol: str, summary: dict) -> dict:
+    """Create a compact row for a multi-asset backtest summary."""
+    return {
+        "symbol": symbol,
+        "total_signals": summary["total_signals"],
+        "average_forward_return": summary["average_forward_return"],
+        "best_signal_by_average_return": summary["best_signal_by_average_return"],
+        "worst_signal_by_average_return": summary["worst_signal_by_average_return"],
+    }
+
+
+def print_multi_asset_backtest(asset_summaries: list[dict]) -> None:
+    """Print the consolidated multi-asset educational backtest."""
+    print()
+    print("Kairon Crypto Agent — Multi-Asset Backtest")
+
+    if not asset_summaries:
+        print("No multi-asset backtest results were available.")
+        return
+
+    for asset in asset_summaries:
+        print()
+        print(f"Symbol: {asset['symbol']}")
+        print(f"Total signals: {asset['total_signals']}")
+        print(
+            "Average 7-day forward return: "
+            f"{asset['average_forward_return']:.2f}%"
+        )
+        print(f"Best signal: {asset['best_signal_by_average_return']}")
+        print(f"Worst signal: {asset['worst_signal_by_average_return']}")
+
+
+def _get_best_asset(asset_summaries: list[dict]) -> dict | None:
+    """Find the asset with the highest average forward return."""
+    if not asset_summaries:
+        return None
+    return max(asset_summaries, key=lambda item: item["average_forward_return"])
+
+
+def _get_worst_asset(asset_summaries: list[dict]) -> dict | None:
+    """Find the asset with the lowest average forward return."""
+    if not asset_summaries:
+        return None
+    return min(asset_summaries, key=lambda item: item["average_forward_return"])
+
+
+def _format_asset_performance(asset: dict | None) -> str:
+    """Format one asset performance result for Markdown."""
+    if asset is None:
+        return "unavailable"
+    return f"{asset['symbol']} ({asset['average_forward_return']:.2f}%)"
+
+
+def generate_multi_asset_backtest_markdown(asset_summaries: list[dict]) -> str:
+    """Generate the consolidated educational multi-asset backtest report."""
+    timestamp = datetime.now().isoformat(timespec="seconds")
+    best_asset = _get_best_asset(asset_summaries)
+    worst_asset = _get_worst_asset(asset_summaries)
+
+    lines = [
+        "# Kairon Crypto Agent — Multi-Asset Backtest Summary",
+        "",
+        "## Timestamp",
+        "",
+        timestamp,
+        "",
+        "## Methodology",
+        "",
+        (
+            "This educational backtest uses public Binance daily candles. For each "
+            "asset, Kairon generates historical signals using only candles available "
+            "up to that date, then compares the current close with the close "
+            f"{BACKTEST_FORWARD_DAYS} days later."
+        ),
+        "",
+        f"- Assets: {', '.join(SYMBOLS)}",
+        f"- Candle history: last {BACKTEST_CANDLE_LIMIT} daily candles per asset",
+        f"- Lookback window: {BACKTEST_LOOKBACK_WINDOW} candles",
+        f"- Forward return window: {BACKTEST_FORWARD_DAYS} days",
+        "",
+        "## Asset-Level Summary",
+        "",
+    ]
+
+    if not asset_summaries:
+        lines.append("- No backtest results were available.")
+    else:
+        for asset in asset_summaries:
+            lines.extend(
+                [
+                    f"### {asset['symbol']}",
+                    "",
+                    f"- Total signals: {asset['total_signals']}",
+                    (
+                        "- Average 7-day forward return: "
+                        f"{asset['average_forward_return']:.2f}%"
+                    ),
+                    f"- Best signal: {asset['best_signal_by_average_return']}",
+                    f"- Worst signal: {asset['worst_signal_by_average_return']}",
+                    "",
+                ]
+            )
+
+    lines.extend(
+        [
+            "## Best and Worst Assets",
+            "",
+            (
+                "- Best performing asset by average forward return: "
+                f"{_format_asset_performance(best_asset)}"
+            ),
+            (
+                "- Worst performing asset by average forward return: "
+                f"{_format_asset_performance(worst_asset)}"
+            ),
+            "",
+            "## Interpretation",
+            "",
+            (
+                "This report compares how Kairon's simple historical signals behaved "
+                "across major crypto assets. Differences between assets can help "
+                "identify where the current rule set has been more or less aligned "
+                "with later price movement, but the sample is small and should be "
+                "treated as a learning tool."
+            ),
+            "",
+            "## Educational Risk Note",
+            "",
+            (
+                "This backtest is for educational analysis only. It does not connect "
+                "to a Binance account, does not use API keys, does not execute "
+                "trades, and is not proof of future performance."
+            ),
+            "",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def write_multi_asset_backtest_summary(asset_summaries: list[dict]) -> None:
+    """Save the consolidated multi-asset backtest Markdown report."""
+    try:
+        REPORTS_FOLDER.mkdir(exist_ok=True)
+        report_text = generate_multi_asset_backtest_markdown(asset_summaries)
+        MULTI_ASSET_BACKTEST_SUMMARY_PATH.write_text(report_text, encoding="utf-8")
+        print(f"Multi-asset backtest summary saved: {MULTI_ASSET_BACKTEST_SUMMARY_PATH}")
+    except OSError as error:
+        print(f"Multi-asset backtest summary export failed: {error}")
+
+
+def run_multi_asset_backtest() -> None:
+    """Run consolidated educational backtests for all configured assets."""
+    all_results = []
+    asset_summaries = []
+
+    for symbol in SYMBOLS:
+        backtest = run_backtest_for_symbol(symbol)
+        if backtest is None:
+            continue
+
+        results, summary = backtest
+        all_results.extend(results)
+        asset_summaries.append(build_asset_summary(symbol, summary))
+
+    print_multi_asset_backtest(asset_summaries)
+    write_backtest_csv(all_results, MULTI_ASSET_BACKTEST_CSV_PATH)
+    write_multi_asset_backtest_summary(asset_summaries)
 
 
 def main() -> None:
@@ -355,6 +540,7 @@ def main() -> None:
     write_csv_exports(analyses)
     write_markdown_report(analyses, summary)
     run_btc_backtest()
+    run_multi_asset_backtest()
 
 
 if __name__ == "__main__":

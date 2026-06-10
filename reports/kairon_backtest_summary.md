@@ -2,7 +2,7 @@
 
 ## Timestamp
 
-2026-06-10T16:50:58
+2026-06-10T17:01:55
 
 ## Backtest Setup
 
@@ -25,7 +25,7 @@
 - HOLD: 0.86% across 52 signal(s)
 - WEAKNESS_AVOID: -2.48% across 29 signal(s)
 - OVERSOLD_WATCH: -18.07% across 1 signal(s)
-- OVERSOLD_BUT_WEAK: -7.52% across 21 signal(s)
+- OVERSOLD_BUT_WEAK: -7.53% across 21 signal(s)
 
 ## Educational Note
 
