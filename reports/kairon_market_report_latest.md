@@ -2,61 +2,88 @@
 
 ## Timestamp
 
-2026-06-10T17:01:55
+2026-06-15T21:34:25
 
 ## Market Condition
 
-Defensive
+Neutral
 
 ## Executive Summary
 
-- Strongest asset: BTCUSDT (-3.61%)
-- Weakest asset: SOLUSDT (-11.42%)
+- Strongest asset: SOLUSDT (13.76%)
+- Weakest asset: BNBUSDT (3.86%)
 - Assets to watch: none
-- Assets to avoid: BTCUSDT, ETHUSDT, BNBUSDT, SOLUSDT
-- Market interpretation: Multiple assets are showing weakness or fragile oversold conditions, so caution is the dominant message.
+- Assets to avoid: none
+- Market interpretation: Signals are mixed across the tracked assets, so the market does not show a clear risk-on or defensive profile.
+
+## Signal Legend
+
+| Signal | Executive label | Action recommendation | Risk level | Decision type | Plain English meaning |
+| --- | --- | --- | --- | --- | --- |
+| WATCH_BUY | Potential Buy Setup | Monitor for possible entry, but require confirmation before acting. | Medium | Watchlist / Conditional Entry | The asset shows positive technical structure, but this is not an automatic buy. |
+| OVERBOUGHT_WAIT | Overbought / Wait | Avoid chasing the price. Wait for a pullback or better setup. | Medium-High | Wait | The asset may be extended after a strong move. |
+| HOLD | Neutral / Hold | Do not take new action. Continue monitoring. | Low-Medium | No Action | There is no clear technical setup. |
+| WEAKNESS_AVOID | Weakness / Avoid | Avoid new entries until the asset recovers technical strength. | High | Avoid | The asset is trading below key moving averages and shows short-term weakness. |
+| OVERSOLD_WATCH | Oversold / Watch | Monitor for a possible rebound, but wait for confirmation. | High | Watchlist Only | The asset may be oversold, but oversold does not mean automatic buy. |
+| OVERSOLD_BUT_WEAK | Oversold but Weak | Avoid aggressive entry. Wait for reversal confirmation. | Very High | Defensive / Avoid Aggressive Entry | The asset looks oversold, but the trend remains weak. This may be a falling-knife setup. |
 
 ## Asset Analysis
 
 ### BTCUSDT
 
-- Current price: 61825.99
-- SMA 7: 62257.30
-- SMA 21: 69877.33
-- RSI 14: 15.99
-- 7-day change: -3.61%
-- Signal: OVERSOLD_BUT_WEAK
-- Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
+- Current price: 66292.01
+- SMA 7: 64506.03
+- SMA 21: 66519.82
+- RSI 14: 48.45
+- 7-day change: 7.39%
+- Signal: HOLD
+- Executive action: Do not take new action. Continue monitoring.
+- Risk level: Low-Medium
+- Decision type: No Action
+- Plain English meaning: There is no clear technical setup.
+- Explanation: No clear setup.
 
 ### ETHUSDT
 
-- Current price: 1626.58
-- SMA 7: 1652.99
-- SMA 21: 1901.58
-- RSI 14: 20.05
-- 7-day change: -10.28%
-- Signal: OVERSOLD_BUT_WEAK
-- Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
+- Current price: 1792.82
+- SMA 7: 1708.17
+- SMA 21: 1793.33
+- RSI 14: 45.01
+- 7-day change: 9.35%
+- Signal: HOLD
+- Executive action: Do not take new action. Continue monitoring.
+- Risk level: Low-Medium
+- Decision type: No Action
+- Plain English meaning: There is no clear technical setup.
+- Explanation: No clear setup.
 
 ### BNBUSDT
 
-- Current price: 587.30
-- SMA 7: 591.19
-- SMA 21: 638.27
-- RSI 14: 39.28
-- 7-day change: -5.37%
-- Signal: WEAKNESS_AVOID
-- Explanation: Price is below both moving averages, suggesting short-term weakness.
+- Current price: 616.34
+- SMA 7: 608.11
+- SMA 21: 625.32
+- RSI 14: 39.61
+- 7-day change: 3.86%
+- Signal: HOLD
+- Executive action: Do not take new action. Continue monitoring.
+- Risk level: Low-Medium
+- Decision type: No Action
+- Plain English meaning: There is no clear technical setup.
+- Explanation: No clear setup.
 
 ### SOLUSDT
 
-- Current price: 63.43
-- SMA 7: 65.20
-- SMA 21: 76.52
-- RSI 14: 17.92
-- 7-day change: -11.42%
-- Signal: OVERSOLD_BUT_WEAK
-- Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
+- Current price: 73.90
+- SMA 7: 69.29
+- SMA 21: 72.23
+- RSI 14: 49.47
+- 7-day change: 13.76%
+- Signal: HOLD
+- Executive action: Do not take new action. Continue monitoring.
+- Risk level: Low-Medium
+- Decision type: No Action
+- Plain English meaning: There is no clear technical setup.
+- Explanation: No clear setup.
 
 ## Research Context
 

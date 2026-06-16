@@ -2,7 +2,7 @@
 
 ## Timestamp
 
-2026-06-10T17:01:56
+2026-06-15T21:34:26
 
 ## Methodology
 
@@ -18,35 +18,35 @@ This educational backtest uses public Binance daily candles. For each asset, Kai
 ### BTCUSDT
 
 - Total signals: 152
-- Average 7-day forward return: -1.57%
+- Average 7-day forward return: -1.46%
 - Best signal: HOLD
 - Worst signal: OVERSOLD_WATCH
 
 ### ETHUSDT
 
 - Total signals: 152
-- Average 7-day forward return: -2.58%
+- Average 7-day forward return: -2.47%
 - Best signal: HOLD
 - Worst signal: OVERSOLD_BUT_WEAK
 
 ### BNBUSDT
 
 - Total signals: 152
-- Average 7-day forward return: -1.67%
+- Average 7-day forward return: -1.64%
 - Best signal: HOLD
 - Worst signal: OVERSOLD_BUT_WEAK
 
 ### SOLUSDT
 
 - Total signals: 152
-- Average 7-day forward return: -2.95%
+- Average 7-day forward return: -2.80%
 - Best signal: OVERSOLD_WATCH
-- Worst signal: OVERSOLD_BUT_WEAK
+- Worst signal: OVERBOUGHT_WAIT
 
 ## Best and Worst Assets
 
-- Best performing asset by average forward return: BTCUSDT (-1.57%)
-- Worst performing asset by average forward return: SOLUSDT (-2.95%)
+- Best performing asset by average forward return: BTCUSDT (-1.46%)
+- Worst performing asset by average forward return: SOLUSDT (-2.80%)
 
 ## Interpretation
 
@@ -54,4 +54,4 @@ This report compares how Kairon's simple historical signals behaved across major
 
 ## Educational Risk Note
 
-This backtest is for educational analysis only. It does not connect to a Binance account, does not use API keys, does not execute trades, and is not proof of future performance.
+This backtest is for educational analysis only. It does not connect to a Binance account, does not use API keys, does not execute trades, and is not proof of future performance. Signals are analytical classifications, not trade orders.

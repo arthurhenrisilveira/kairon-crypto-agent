@@ -7,6 +7,85 @@ from indicators import (
 )
 
 
+SIGNAL_METADATA = {
+    "WATCH_BUY": {
+        "executive_label": "Potential Buy Setup",
+        "action_recommendation": (
+            "Monitor for possible entry, but require confirmation before acting."
+        ),
+        "risk_level": "Medium",
+        "decision_type": "Watchlist / Conditional Entry",
+        "plain_english_meaning": (
+            "The asset shows positive technical structure, but this is not an "
+            "automatic buy."
+        ),
+    },
+    "OVERBOUGHT_WAIT": {
+        "executive_label": "Overbought / Wait",
+        "action_recommendation": (
+            "Avoid chasing the price. Wait for a pullback or better setup."
+        ),
+        "risk_level": "Medium-High",
+        "decision_type": "Wait",
+        "plain_english_meaning": (
+            "The asset may be extended after a strong move."
+        ),
+    },
+    "HOLD": {
+        "executive_label": "Neutral / Hold",
+        "action_recommendation": "Do not take new action. Continue monitoring.",
+        "risk_level": "Low-Medium",
+        "decision_type": "No Action",
+        "plain_english_meaning": "There is no clear technical setup.",
+    },
+    "WEAKNESS_AVOID": {
+        "executive_label": "Weakness / Avoid",
+        "action_recommendation": (
+            "Avoid new entries until the asset recovers technical strength."
+        ),
+        "risk_level": "High",
+        "decision_type": "Avoid",
+        "plain_english_meaning": (
+            "The asset is trading below key moving averages and shows short-term "
+            "weakness."
+        ),
+    },
+    "OVERSOLD_WATCH": {
+        "executive_label": "Oversold / Watch",
+        "action_recommendation": (
+            "Monitor for a possible rebound, but wait for confirmation."
+        ),
+        "risk_level": "High",
+        "decision_type": "Watchlist Only",
+        "plain_english_meaning": (
+            "The asset may be oversold, but oversold does not mean automatic buy."
+        ),
+    },
+    "OVERSOLD_BUT_WEAK": {
+        "executive_label": "Oversold but Weak",
+        "action_recommendation": (
+            "Avoid aggressive entry. Wait for reversal confirmation."
+        ),
+        "risk_level": "Very High",
+        "decision_type": "Defensive / Avoid Aggressive Entry",
+        "plain_english_meaning": (
+            "The asset looks oversold, but the trend remains weak. This may be a "
+            "falling-knife setup."
+        ),
+    },
+}
+
+
+def get_signal_metadata(signal: str) -> dict:
+    """Return executive action metadata for a Kairon signal."""
+    normalized_signal = signal.upper()
+
+    if normalized_signal not in SIGNAL_METADATA:
+        raise ValueError(f"Unknown signal: {signal}")
+
+    return SIGNAL_METADATA[normalized_signal].copy()
+
+
 def generate_basic_signal(symbol: str, closes: list[float]) -> dict:
     """Generate a preliminary signal from close prices."""
     if len(closes) < 22:
@@ -40,6 +119,8 @@ def generate_basic_signal(symbol: str, closes: list[float]) -> dict:
         signal = "HOLD"
         explanation = "No clear setup."
 
+    metadata = get_signal_metadata(signal)
+
     return {
         "symbol": symbol.upper(),
         "current_price": current_price,
@@ -49,4 +130,9 @@ def generate_basic_signal(symbol: str, closes: list[float]) -> dict:
         "change_7d": change_7d,
         "signal": signal,
         "explanation": explanation,
+        "executive_label": metadata["executive_label"],
+        "action_recommendation": metadata["action_recommendation"],
+        "risk_level": metadata["risk_level"],
+        "decision_type": metadata["decision_type"],
+        "plain_english_meaning": metadata["plain_english_meaning"],
     }

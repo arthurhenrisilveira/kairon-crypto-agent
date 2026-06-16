@@ -2,6 +2,18 @@
 
 from datetime import datetime
 
+from strategy_rules import SIGNAL_METADATA
+
+
+SIGNAL_LEGEND_ORDER = [
+    "WATCH_BUY",
+    "OVERBOUGHT_WAIT",
+    "HOLD",
+    "WEAKNESS_AVOID",
+    "OVERSOLD_WATCH",
+    "OVERSOLD_BUT_WEAK",
+]
+
 
 def _format_asset_list(symbols: list[str]) -> str:
     """Return a readable asset list for report sections."""
@@ -46,6 +58,28 @@ def _get_market_interpretation(market_condition: str) -> str:
     )
 
 
+def _build_signal_legend_table() -> list[str]:
+    """Build the executive signal legend as Markdown table rows."""
+    lines = [
+        "| Signal | Executive label | Action recommendation | Risk level | Decision type | Plain English meaning |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+
+    for signal in SIGNAL_LEGEND_ORDER:
+        metadata = SIGNAL_METADATA[signal]
+        lines.append(
+            "| "
+            f"{signal} | "
+            f"{metadata['executive_label']} | "
+            f"{metadata['action_recommendation']} | "
+            f"{metadata['risk_level']} | "
+            f"{metadata['decision_type']} | "
+            f"{metadata['plain_english_meaning']} |"
+        )
+
+    return lines
+
+
 def generate_markdown_report(results: list[dict], summary: dict) -> str:
     """Generate a Markdown market report from analysis results."""
     timestamp = datetime.now().isoformat(timespec="seconds")
@@ -71,6 +105,10 @@ def generate_markdown_report(results: list[dict], summary: dict) -> str:
         f"- Assets to avoid: {_format_asset_list(summary['assets_to_avoid'])}",
         f"- Market interpretation: {market_interpretation}",
         "",
+        "## Signal Legend",
+        "",
+        *_build_signal_legend_table(),
+        "",
         "## Asset Analysis",
         "",
     ]
@@ -86,6 +124,10 @@ def generate_markdown_report(results: list[dict], summary: dict) -> str:
                 f"- RSI 14: {result['rsi_14']:.2f}",
                 f"- 7-day change: {result['change_7d']:.2f}%",
                 f"- Signal: {result['signal']}",
+                f"- Executive action: {result['action_recommendation']}",
+                f"- Risk level: {result['risk_level']}",
+                f"- Decision type: {result['decision_type']}",
+                f"- Plain English meaning: {result['plain_english_meaning']}",
                 f"- Explanation: {result['explanation']}",
                 "",
             ]

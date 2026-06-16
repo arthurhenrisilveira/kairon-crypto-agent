@@ -114,6 +114,9 @@ def print_asset_report(analysis: dict) -> None:
     print(f"RSI 14: {analysis['rsi_14']:.2f}")
     print(f"7-day change: {analysis['change_7d']:.2f}%")
     print(f"Signal: {analysis['signal']}")
+    print(f"Executive action: {analysis['action_recommendation']}")
+    print(f"Risk level: {analysis['risk_level']}")
+    print(f"Decision type: {analysis['decision_type']}")
     print(f"Explanation: {analysis['explanation']}")
     print()
 
@@ -227,7 +230,8 @@ def print_backtest_summary(symbol: str, summary: dict) -> None:
     print(f"Worst signal: {summary['worst_signal_by_average_return']}")
     print(
         "Note: this educational backtest reviews historical behavior and is not "
-        "proof of future performance."
+        "proof of future performance. Signals are analytical classifications, "
+        "not trade orders."
     )
 
 
@@ -296,7 +300,8 @@ def generate_backtest_summary_markdown(symbol: str, summary: dict) -> str:
             (
                 "This backtest is for educational analysis only. It reviews how "
                 "historical Kairon signals behaved over a later 7-day window, but "
-                "it is not proof of future performance and does not execute trades."
+                "it is not proof of future performance and does not execute trades. "
+                "Signals are analytical classifications, not trade orders."
             ),
             "",
         ]
@@ -480,7 +485,8 @@ def generate_multi_asset_backtest_markdown(asset_summaries: list[dict]) -> str:
             (
                 "This backtest is for educational analysis only. It does not connect "
                 "to a Binance account, does not use API keys, does not execute "
-                "trades, and is not proof of future performance."
+                "trades, and is not proof of future performance. Signals are "
+                "analytical classifications, not trade orders."
             ),
             "",
         ]

@@ -2,7 +2,7 @@
 
 ## Timestamp
 
-2026-06-10T17:01:55
+2026-06-15T21:34:25
 
 ## Backtest Setup
 
@@ -14,19 +14,19 @@
 ## Results
 
 - Total signals: 152
-- Average 7-day forward return: -1.57%
+- Average 7-day forward return: -1.46%
 - Best signal: HOLD
 - Worst signal: OVERSOLD_WATCH
 
 ## Average Return by Signal
 
-- WATCH_BUY: -0.98% across 36 signal(s)
-- OVERBOUGHT_WAIT: 0.03% across 13 signal(s)
-- HOLD: 0.86% across 52 signal(s)
+- HOLD: 0.67% across 50 signal(s)
+- OVERBOUGHT_WAIT: 0.12% across 11 signal(s)
+- WATCH_BUY: -1.02% across 34 signal(s)
 - WEAKNESS_AVOID: -2.48% across 29 signal(s)
 - OVERSOLD_WATCH: -18.07% across 1 signal(s)
-- OVERSOLD_BUT_WEAK: -7.53% across 21 signal(s)
+- OVERSOLD_BUT_WEAK: -4.92% across 27 signal(s)
 
 ## Educational Note
 
-This backtest is for educational analysis only. It reviews how historical Kairon signals behaved over a later 7-day window, but it is not proof of future performance and does not execute trades.
+This backtest is for educational analysis only. It reviews how historical Kairon signals behaved over a later 7-day window, but it is not proof of future performance and does not execute trades. Signals are analytical classifications, not trade orders.
