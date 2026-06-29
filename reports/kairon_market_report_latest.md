@@ -1,20 +1,20 @@
-# Kairon Crypto Agent — Market Report
+# Kairon Crypto Agent - Market Report
 
 ## Timestamp
 
-2026-06-15T21:34:25
+2026-06-28T23:55:49
 
 ## Market Condition
 
-Neutral
+Defensive
 
 ## Executive Summary
 
-- Strongest asset: SOLUSDT (13.76%)
-- Weakest asset: BNBUSDT (3.86%)
-- Assets to watch: none
-- Assets to avoid: none
-- Market interpretation: Signals are mixed across the tracked assets, so the market does not show a clear risk-on or defensive profile.
+- Strongest asset: SOLUSDT (0.14%)
+- Weakest asset: ETHUSDT (-8.71%)
+- Assets to watch: SOLUSDT
+- Assets to avoid: BTCUSDT, ETHUSDT, BNBUSDT
+- Market interpretation: Multiple assets are showing weakness or fragile oversold conditions, so caution is the dominant message.
 
 ## Signal Legend
 
@@ -31,59 +31,59 @@ Neutral
 
 ### BTCUSDT
 
-- Current price: 66292.01
-- SMA 7: 64506.03
-- SMA 21: 66519.82
-- RSI 14: 48.45
-- 7-day change: 7.39%
-- Signal: HOLD
-- Executive action: Do not take new action. Continue monitoring.
-- Risk level: Low-Medium
-- Decision type: No Action
-- Plain English meaning: There is no clear technical setup.
-- Explanation: No clear setup.
+- Current price: 59740.00
+- SMA 7: 60435.69
+- SMA 21: 62778.40
+- RSI 14: 21.64
+- 7-day change: -6.69%
+- Signal: OVERSOLD_BUT_WEAK
+- Executive action: Avoid aggressive entry. Wait for reversal confirmation.
+- Risk level: Very High
+- Decision type: Defensive / Avoid Aggressive Entry
+- Plain English meaning: The asset looks oversold, but the trend remains weak. This may be a falling-knife setup.
+- Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
 
 ### ETHUSDT
 
-- Current price: 1792.82
-- SMA 7: 1708.17
-- SMA 21: 1793.33
-- RSI 14: 45.01
-- 7-day change: 9.35%
-- Signal: HOLD
-- Executive action: Do not take new action. Continue monitoring.
-- Risk level: Low-Medium
-- Decision type: No Action
-- Plain English meaning: There is no clear technical setup.
-- Explanation: No clear setup.
+- Current price: 1577.58
+- SMA 7: 1594.19
+- SMA 21: 1671.68
+- RSI 14: 19.12
+- 7-day change: -8.71%
+- Signal: OVERSOLD_BUT_WEAK
+- Executive action: Avoid aggressive entry. Wait for reversal confirmation.
+- Risk level: Very High
+- Decision type: Defensive / Avoid Aggressive Entry
+- Plain English meaning: The asset looks oversold, but the trend remains weak. This may be a falling-knife setup.
+- Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
 
 ### BNBUSDT
 
-- Current price: 616.34
-- SMA 7: 608.11
-- SMA 21: 625.32
-- RSI 14: 39.61
-- 7-day change: 3.86%
-- Signal: HOLD
-- Executive action: Do not take new action. Continue monitoring.
-- Risk level: Low-Medium
-- Decision type: No Action
-- Plain English meaning: There is no clear technical setup.
-- Explanation: No clear setup.
+- Current price: 553.77
+- SMA 7: 561.86
+- SMA 21: 585.51
+- RSI 14: 22.00
+- 7-day change: -6.16%
+- Signal: OVERSOLD_BUT_WEAK
+- Executive action: Avoid aggressive entry. Wait for reversal confirmation.
+- Risk level: Very High
+- Decision type: Defensive / Avoid Aggressive Entry
+- Plain English meaning: The asset looks oversold, but the trend remains weak. This may be a falling-knife setup.
+- Explanation: RSI is low, but price remains below both moving averages. This may be a falling-knife risk.
 
 ### SOLUSDT
 
-- Current price: 73.90
-- SMA 7: 69.29
-- SMA 21: 72.23
-- RSI 14: 49.47
-- 7-day change: 13.76%
-- Signal: HOLD
-- Executive action: Do not take new action. Continue monitoring.
-- Risk level: Low-Medium
-- Decision type: No Action
-- Plain English meaning: There is no clear technical setup.
-- Explanation: No clear setup.
+- Current price: 72.05
+- SMA 7: 70.20
+- SMA 21: 70.01
+- RSI 14: 45.27
+- 7-day change: 0.14%
+- Signal: WATCH_BUY
+- Executive action: Monitor for possible entry, but require confirmation before acting.
+- Risk level: Medium
+- Decision type: Watchlist / Conditional Entry
+- Plain English meaning: The asset shows positive technical structure, but this is not an automatic buy.
+- Explanation: Price is above both moving averages and RSI is not overbought.
 
 ## Research Context
 

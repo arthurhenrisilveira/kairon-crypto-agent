@@ -17,8 +17,9 @@ BACKTEST_LOOKBACK_WINDOW = 21
 BACKTEST_FORWARD_DAYS = 7
 WATCH_SIGNALS = ["WATCH_BUY", "OVERSOLD_WATCH"]
 AVOID_SIGNALS = ["WEAKNESS_AVOID", "OVERBOUGHT_WAIT", "OVERSOLD_BUT_WEAK"]
-DATA_FOLDER = Path("data")
-REPORTS_FOLDER = Path("reports")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DATA_FOLDER = PROJECT_ROOT / "data"
+REPORTS_FOLDER = PROJECT_ROOT / "reports"
 LATEST_CSV_PATH = DATA_FOLDER / "kairon_analysis_latest.csv"
 HISTORY_CSV_PATH = DATA_FOLDER / "kairon_analysis_history.csv"
 LATEST_MARKDOWN_REPORT_PATH = REPORTS_FOLDER / "kairon_market_report_latest.md"
@@ -49,6 +50,14 @@ BACKTEST_CSV_COLUMNS = [
     "signal",
     "explanation",
 ]
+
+
+def _display_path(path: Path) -> str:
+    """Return a portable path for console output."""
+    try:
+        return path.relative_to(PROJECT_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 
 def analyze_symbol(symbol: str) -> dict | None:
@@ -178,8 +187,8 @@ def write_csv_exports(analyses: list[dict]) -> None:
             writer.writerows(rows)
 
         print()
-        print(f"CSV export saved: {LATEST_CSV_PATH}")
-        print(f"CSV history updated: {HISTORY_CSV_PATH}")
+        print(f"CSV export saved: {_display_path(LATEST_CSV_PATH)}")
+        print(f"CSV history updated: {_display_path(HISTORY_CSV_PATH)}")
     except OSError as error:
         print()
         print(f"CSV export failed: {error}")
@@ -195,7 +204,7 @@ def write_markdown_report(analyses: list[dict], summary: dict) -> None:
         REPORTS_FOLDER.mkdir(exist_ok=True)
         report_text = generate_markdown_report(analyses, summary)
         LATEST_MARKDOWN_REPORT_PATH.write_text(report_text, encoding="utf-8")
-        print(f"Markdown report saved: {LATEST_MARKDOWN_REPORT_PATH}")
+        print(f"Markdown report saved: {_display_path(LATEST_MARKDOWN_REPORT_PATH)}")
     except OSError as error:
         print(f"Markdown report failed: {error}")
 
@@ -208,7 +217,7 @@ def _format_signal_return_line(signal: str, average_return: float, count: int) -
 def print_backtest_summary(symbol: str, summary: dict) -> None:
     """Print a beginner-friendly educational backtest summary."""
     print()
-    print("Kairon Crypto Agent — Simple Backtest")
+    print("Kairon Crypto Agent - Simple Backtest")
     print(f"Symbol: {symbol}")
     print(f"Total signals: {summary['total_signals']}")
     print(
@@ -247,7 +256,7 @@ def write_backtest_csv(results: list[dict], csv_path: Path = BACKTEST_CSV_PATH) 
             writer = csv.DictWriter(csv_file, fieldnames=BACKTEST_CSV_COLUMNS)
             writer.writeheader()
             writer.writerows(results)
-        print(f"Backtest CSV saved: {csv_path}")
+        print(f"Backtest CSV saved: {_display_path(csv_path)}")
     except OSError as error:
         print(f"Backtest CSV export failed: {error}")
 
@@ -256,7 +265,7 @@ def generate_backtest_summary_markdown(symbol: str, summary: dict) -> str:
     """Generate a Markdown summary for the educational backtest."""
     timestamp = datetime.now().isoformat(timespec="seconds")
     lines = [
-        "# Kairon Crypto Agent — Backtest Summary",
+        "# Kairon Crypto Agent - Backtest Summary",
         "",
         "## Timestamp",
         "",
@@ -316,7 +325,7 @@ def write_backtest_summary_markdown(symbol: str, summary: dict) -> None:
         REPORTS_FOLDER.mkdir(exist_ok=True)
         summary_text = generate_backtest_summary_markdown(symbol, summary)
         BACKTEST_SUMMARY_PATH.write_text(summary_text, encoding="utf-8")
-        print(f"Backtest summary saved: {BACKTEST_SUMMARY_PATH}")
+        print(f"Backtest summary saved: {_display_path(BACKTEST_SUMMARY_PATH)}")
     except OSError as error:
         print(f"Backtest summary export failed: {error}")
 
@@ -368,7 +377,7 @@ def build_asset_summary(symbol: str, summary: dict) -> dict:
 def print_multi_asset_backtest(asset_summaries: list[dict]) -> None:
     """Print the consolidated multi-asset educational backtest."""
     print()
-    print("Kairon Crypto Agent — Multi-Asset Backtest")
+    print("Kairon Crypto Agent - Multi-Asset Backtest")
 
     if not asset_summaries:
         print("No multi-asset backtest results were available.")
@@ -414,7 +423,7 @@ def generate_multi_asset_backtest_markdown(asset_summaries: list[dict]) -> str:
     worst_asset = _get_worst_asset(asset_summaries)
 
     lines = [
-        "# Kairon Crypto Agent — Multi-Asset Backtest Summary",
+        "# Kairon Crypto Agent - Multi-Asset Backtest Summary",
         "",
         "## Timestamp",
         "",
@@ -501,7 +510,10 @@ def write_multi_asset_backtest_summary(asset_summaries: list[dict]) -> None:
         REPORTS_FOLDER.mkdir(exist_ok=True)
         report_text = generate_multi_asset_backtest_markdown(asset_summaries)
         MULTI_ASSET_BACKTEST_SUMMARY_PATH.write_text(report_text, encoding="utf-8")
-        print(f"Multi-asset backtest summary saved: {MULTI_ASSET_BACKTEST_SUMMARY_PATH}")
+        print(
+            "Multi-asset backtest summary saved: "
+            f"{_display_path(MULTI_ASSET_BACKTEST_SUMMARY_PATH)}"
+        )
     except OSError as error:
         print(f"Multi-asset backtest summary export failed: {error}")
 
@@ -529,7 +541,7 @@ def main() -> None:
     """Run the public multi-asset analysis report."""
     analyses = []
 
-    print("Kairon Crypto Agent — Multi-Asset Analysis")
+    print("Kairon Crypto Agent - Multi-Asset Analysis")
     print("--------------------------------------------------")
     print()
 

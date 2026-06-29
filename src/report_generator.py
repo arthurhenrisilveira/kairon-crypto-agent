@@ -87,7 +87,7 @@ def generate_markdown_report(results: list[dict], summary: dict) -> str:
     market_interpretation = _get_market_interpretation(market_condition)
 
     lines = [
-        "# Kairon Crypto Agent — Market Report",
+        "# Kairon Crypto Agent - Market Report",
         "",
         "## Timestamp",
         "",

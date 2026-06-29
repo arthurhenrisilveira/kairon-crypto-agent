@@ -1,4 +1,4 @@
-# FGV Crypto vs Global Markets — Research Summary
+# FGV Crypto vs Global Markets - Research Summary
 
 ## Objective
 
@@ -51,7 +51,7 @@ Main modeling approach:
 - p-value threshold of 0.10
 - VIF threshold of 10 to control multicollinearity
 - Temporal train/test split
-- Evaluation with R², adjusted R², AIC, BIC, RMSE, RMSE%, and mean error
+- Evaluation with R-squared, adjusted R-squared, AIC, BIC, RMSE, RMSE%, and mean error
 
 Core features include lags such as 7, 14, 21, 28, and in some experiments up to 50 days, plus moving averages of 10, 20, and 30 days.
 
@@ -59,13 +59,13 @@ Core features include lags such as 7, 14, 21, 28, and in some experiments up to 
 
 NASDAQ appears repeatedly as one of the strongest explanatory variables, especially for BTC, ETH, SOL, and BNB.
 
-BTC showed the clearest interpretable case: a simplified model using NASDAQ lags achieved roughly 0.58 test R² and about 13.6% RMSE.
+BTC showed the clearest interpretable case: a simplified model using NASDAQ lags achieved roughly 0.58 test R-squared and about 13.6% RMSE.
 
-ETH also showed useful signal in some benchmark runs, with test R² around 0.60.
+ETH also showed useful signal in some benchmark runs, with test R-squared around 0.60.
 
 SOL and BNB showed partial market linkage, often through NASDAQ features, but with weaker stability.
 
-XRP appeared much less reliable, with several models producing poor or negative out-of-sample R².
+XRP appeared much less reliable, with several models producing poor or negative out-of-sample R-squared.
 
 ## Limitations
 

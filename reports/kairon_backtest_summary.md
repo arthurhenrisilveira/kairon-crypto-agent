@@ -1,8 +1,8 @@
-# Kairon Crypto Agent — Backtest Summary
+# Kairon Crypto Agent - Backtest Summary
 
 ## Timestamp
 
-2026-06-15T21:34:25
+2026-06-28T23:55:49
 
 ## Backtest Setup
 
@@ -14,18 +14,18 @@
 ## Results
 
 - Total signals: 152
-- Average 7-day forward return: -1.46%
-- Best signal: HOLD
+- Average 7-day forward return: -1.55%
+- Best signal: OVERBOUGHT_WAIT
 - Worst signal: OVERSOLD_WATCH
 
 ## Average Return by Signal
 
-- HOLD: 0.67% across 50 signal(s)
-- OVERBOUGHT_WAIT: 0.12% across 11 signal(s)
-- WATCH_BUY: -1.02% across 34 signal(s)
-- WEAKNESS_AVOID: -2.48% across 29 signal(s)
-- OVERSOLD_WATCH: -18.07% across 1 signal(s)
-- OVERSOLD_BUT_WEAK: -4.92% across 27 signal(s)
+- WEAKNESS_AVOID: -2.74% across 32 signal(s)
+- HOLD: -0.02% across 48 signal(s)
+- OVERSOLD_WATCH: -4.86% across 4 signal(s)
+- OVERSOLD_BUT_WEAK: -4.60% across 28 signal(s)
+- WATCH_BUY: -0.69% across 32 signal(s)
+- OVERBOUGHT_WAIT: 2.84% across 8 signal(s)
 
 ## Educational Note
 
