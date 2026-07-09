@@ -26,11 +26,17 @@ Public market data
 
 ## Outputs
 
-Markdown reports are generated in `reports/`:
+Markdown reports are generated locally in `reports/`:
 
 - `reports/kairon_market_report_latest.md`
 - `reports/kairon_backtest_summary.md`
 - `reports/kairon_multi_asset_backtest_summary.md`
+
+Static sample reports are committed in `reports/`:
+
+- `reports/sample_market_report.md`
+- `reports/sample_backtest_summary.md`
+- `reports/sample_multi_asset_backtest_summary.md`
 
 CSV exports are generated in `data/`:
 
@@ -39,11 +45,12 @@ CSV exports are generated in `data/`:
 - `data/kairon_backtest_btcusdt.csv`
 - `data/kairon_backtest_multi_asset.csv`
 
-The `data/` CSV files are local run outputs and are ignored by git.
+The generated `data/` CSV files and `reports/kairon_*` Markdown files are local
+run outputs and are ignored by git.
 
 ## Safety Boundaries
 
-Kairon is educational software. It does not execute trades, does not manage real funds, does not request API keys, and does not authenticate with an exchange account. Signals are analytical classifications only.
+Kairon is educational software. It does not provide financial advice, investment recommendations, trade signals, or automated trading. It does not execute trades, does not manage real funds, does not request API keys, and does not authenticate with an exchange account. Signals are analytical classifications only.
 
 ## Portability
 

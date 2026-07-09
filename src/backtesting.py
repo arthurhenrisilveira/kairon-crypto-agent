@@ -44,7 +44,7 @@ def run_signal_backtest(
                 "forward_days": forward_days,
                 "forward_return_pct": forward_return_pct,
                 "signal": signal_result["signal"],
-                "explanation": signal_result["explanation"],
+                "interpretation": signal_result["interpretation"],
             }
         )
 

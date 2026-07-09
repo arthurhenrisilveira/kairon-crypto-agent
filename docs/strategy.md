@@ -1,6 +1,6 @@
 # Strategy
 
-Kairon Crypto Agent uses a simple educational rule set. The strategy layer is designed to explain market conditions, not to place trades.
+Kairon Crypto Agent uses a simple educational rule set. The strategy layer is designed to explain market conditions for research and learning, not to provide financial advice, investment recommendations, trade signals, or automated trading.
 
 ## Objective
 
@@ -26,20 +26,20 @@ The current signal engine uses:
 
 These indicators are intentionally basic so the project stays easy to inspect.
 
-## Decision Logic
+## Classification Logic
 
 The rule set compares the current close with moving averages and RSI levels. It then returns one of the labels documented in `docs/signal_legend.md`.
 
 Examples:
 
-- `WATCH_BUY` means price structure is constructive, but confirmation is still required.
-- `OVERBOUGHT_WAIT` means RSI is high and the project avoids chasing strength.
+- `WATCH_BUY` means the educational rule set detected positive technical structure.
+- `OVERBOUGHT_WAIT` means RSI is high and the rule set marks the condition as extended.
 - `WEAKNESS_AVOID` means price is below important moving averages.
 - `HOLD` means there is no clear technical setup.
 
 ## Risk Rules
 
-Kairon signals are analytical classifications only. They should not be treated as buy or sell instructions.
+Kairon signals are analytical classifications only. They should not be treated as financial advice, investment recommendations, trade signals, or automated trading output.
 
 The project should continue to avoid:
 

@@ -9,75 +9,80 @@ from indicators import (
 
 SIGNAL_METADATA = {
     "WATCH_BUY": {
-        "executive_label": "Potential Buy Setup",
-        "action_recommendation": (
-            "Monitor for possible entry, but require confirmation before acting."
+        "classification_label": "Positive Technical Structure",
+        "signal_interpretation": (
+            "The asset shows constructive technical structure under this rule set "
+            "and may deserve further observation."
         ),
-        "risk_level": "Medium",
-        "decision_type": "Watchlist / Conditional Entry",
+        "research_risk_level": "Medium",
+        "research_classification": "Observation / Confirmation Required",
         "plain_english_meaning": (
-            "The asset shows positive technical structure, but this is not an "
-            "automatic buy."
+            "The asset is above the moving-average thresholds used by this "
+            "educational model."
         ),
     },
     "OVERBOUGHT_WAIT": {
-        "executive_label": "Overbought / Wait",
-        "action_recommendation": (
-            "Avoid chasing the price. Wait for a pullback or better setup."
-        ),
-        "risk_level": "Medium-High",
-        "decision_type": "Wait",
+        "classification_label": "Extended Technical Structure",
+        "signal_interpretation": "The asset appears extended under this rule set.",
+        "research_risk_level": "Medium-High",
+        "research_classification": "Extended Condition",
         "plain_english_meaning": (
             "The asset may be extended after a strong move."
         ),
     },
     "HOLD": {
-        "executive_label": "Neutral / Hold",
-        "action_recommendation": "Do not take new action. Continue monitoring.",
-        "risk_level": "Low-Medium",
-        "decision_type": "No Action",
-        "plain_english_meaning": "There is no clear technical setup.",
+        "classification_label": "Neutral Technical Structure",
+        "signal_interpretation": (
+            "The rule set does not identify a clear positive or defensive "
+            "technical condition."
+        ),
+        "research_risk_level": "Low-Medium",
+        "research_classification": "Neutral Condition",
+        "plain_english_meaning": "There is no clear technical condition.",
     },
     "WEAKNESS_AVOID": {
-        "executive_label": "Weakness / Avoid",
-        "action_recommendation": (
-            "Avoid new entries until the asset recovers technical strength."
+        "classification_label": "Technical Weakness",
+        "signal_interpretation": (
+            "The asset remains technically weak under this rule set."
         ),
-        "risk_level": "High",
-        "decision_type": "Avoid",
+        "research_risk_level": "High",
+        "research_classification": "Weakness Condition",
         "plain_english_meaning": (
             "The asset is trading below key moving averages and shows short-term "
             "weakness."
         ),
     },
     "OVERSOLD_WATCH": {
-        "executive_label": "Oversold / Watch",
-        "action_recommendation": (
-            "Monitor for a possible rebound, but wait for confirmation."
+        "classification_label": "Oversold Observation",
+        "signal_interpretation": (
+            "The asset shows an oversold reading under this rule set and requires "
+            "further observation."
         ),
-        "risk_level": "High",
-        "decision_type": "Watchlist Only",
+        "research_risk_level": "High",
+        "research_classification": "Oversold Observation",
         "plain_english_meaning": (
-            "The asset may be oversold, but oversold does not mean automatic buy."
+            "The asset may be oversold, but that reading alone does not imply a "
+            "favorable condition."
         ),
     },
     "OVERSOLD_BUT_WEAK": {
-        "executive_label": "Oversold but Weak",
-        "action_recommendation": (
-            "Avoid aggressive entry. Wait for reversal confirmation."
+        "classification_label": "Oversold With Weak Trend",
+        "signal_interpretation": (
+            "The asset shows an oversold reading while trend measures remain weak "
+            "under this rule set."
         ),
-        "risk_level": "Very High",
-        "decision_type": "Defensive / Avoid Aggressive Entry",
+        "research_risk_level": "Very High",
+        "research_classification": "Defensive / Weak Trend",
         "plain_english_meaning": (
-            "The asset looks oversold, but the trend remains weak. This may be a "
-            "falling-knife setup."
+            "The asset looks oversold, but the trend remains weak. This may "
+            "represent elevated downside risk."
         ),
     },
 }
 
 
 def get_signal_metadata(signal: str) -> dict:
-    """Return executive action metadata for a Kairon signal."""
+    """Return educational metadata for a Kairon signal."""
     normalized_signal = signal.upper()
 
     if normalized_signal not in SIGNAL_METADATA:
@@ -99,25 +104,35 @@ def generate_basic_signal(symbol: str, closes: list[float]) -> dict:
 
     if current_price > sma_7 > sma_21 and rsi_14 < 70:
         signal = "WATCH_BUY"
-        explanation = "Price is above both moving averages and RSI is not overbought."
+        interpretation = (
+            "Price is above both moving averages and RSI is below the overbought "
+            "threshold."
+        )
     elif rsi_14 >= 70:
         signal = "OVERBOUGHT_WAIT"
-        explanation = "RSI is high, so wait for a better entry."
+        interpretation = (
+            "RSI is high, so this rule set classifies the asset as extended."
+        )
     elif current_price < sma_7 < sma_21 and rsi_14 <= 30:
         signal = "OVERSOLD_BUT_WEAK"
-        explanation = (
+        interpretation = (
             "RSI is low, but price remains below both moving averages. "
-            "This may be a falling-knife risk."
+            "The rule set classifies this as elevated downside risk."
         )
     elif current_price < sma_7 < sma_21:
         signal = "WEAKNESS_AVOID"
-        explanation = "Price is below both moving averages, suggesting short-term weakness."
+        interpretation = (
+            "Price is below both moving averages, suggesting short-term technical "
+            "weakness."
+        )
     elif rsi_14 <= 30:
         signal = "OVERSOLD_WATCH"
-        explanation = "RSI is low and may deserve monitoring, but confirmation is needed."
+        interpretation = (
+            "RSI is low and may deserve further observation under this rule set."
+        )
     else:
         signal = "HOLD"
-        explanation = "No clear setup."
+        interpretation = "The rule set does not identify a clear technical condition."
 
     metadata = get_signal_metadata(signal)
 
@@ -129,10 +144,10 @@ def generate_basic_signal(symbol: str, closes: list[float]) -> dict:
         "rsi_14": rsi_14,
         "change_7d": change_7d,
         "signal": signal,
-        "explanation": explanation,
-        "executive_label": metadata["executive_label"],
-        "action_recommendation": metadata["action_recommendation"],
-        "risk_level": metadata["risk_level"],
-        "decision_type": metadata["decision_type"],
+        "interpretation": interpretation,
+        "classification_label": metadata["classification_label"],
+        "signal_interpretation": metadata["signal_interpretation"],
+        "research_risk_level": metadata["research_risk_level"],
+        "research_classification": metadata["research_classification"],
         "plain_english_meaning": metadata["plain_english_meaning"],
     }

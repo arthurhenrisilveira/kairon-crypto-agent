@@ -15,8 +15,8 @@ BACKTEST_SYMBOL = "BTCUSDT"
 BACKTEST_CANDLE_LIMIT = 180
 BACKTEST_LOOKBACK_WINDOW = 21
 BACKTEST_FORWARD_DAYS = 7
-WATCH_SIGNALS = ["WATCH_BUY", "OVERSOLD_WATCH"]
-AVOID_SIGNALS = ["WEAKNESS_AVOID", "OVERBOUGHT_WAIT", "OVERSOLD_BUT_WEAK"]
+OBSERVATION_SIGNALS = ["WATCH_BUY", "OVERSOLD_WATCH"]
+TECHNICAL_CAUTION_SIGNALS = ["WEAKNESS_AVOID", "OVERBOUGHT_WAIT", "OVERSOLD_BUT_WEAK"]
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_FOLDER = PROJECT_ROOT / "data"
 REPORTS_FOLDER = PROJECT_ROOT / "reports"
@@ -38,7 +38,7 @@ CSV_COLUMNS = [
     "rsi_14",
     "change_7d",
     "signal",
-    "explanation",
+    "interpretation",
 ]
 BACKTEST_CSV_COLUMNS = [
     "date",
@@ -48,7 +48,7 @@ BACKTEST_CSV_COLUMNS = [
     "forward_days",
     "forward_return_pct",
     "signal",
-    "explanation",
+    "interpretation",
 ]
 
 
@@ -93,24 +93,26 @@ def build_summary(analyses: list[dict]) -> dict:
         return {
             "strongest_asset": "unavailable",
             "weakest_asset": "unavailable",
-            "assets_to_watch": [],
-            "assets_to_avoid": [],
+            "assets_for_observation": [],
+            "assets_showing_technical_caution": [],
         }
 
     strongest = max(analyses, key=lambda item: item["change_7d"])
     weakest = min(analyses, key=lambda item: item["change_7d"])
-    assets_to_watch = [
-        item["symbol"] for item in analyses if item["signal"] in WATCH_SIGNALS
+    assets_for_observation = [
+        item["symbol"] for item in analyses if item["signal"] in OBSERVATION_SIGNALS
     ]
-    assets_to_avoid = [
-        item["symbol"] for item in analyses if item["signal"] in AVOID_SIGNALS
+    assets_showing_technical_caution = [
+        item["symbol"]
+        for item in analyses
+        if item["signal"] in TECHNICAL_CAUTION_SIGNALS
     ]
 
     return {
         "strongest_asset": f"{strongest['symbol']} ({strongest['change_7d']:.2f}%)",
         "weakest_asset": f"{weakest['symbol']} ({weakest['change_7d']:.2f}%)",
-        "assets_to_watch": assets_to_watch,
-        "assets_to_avoid": assets_to_avoid,
+        "assets_for_observation": assets_for_observation,
+        "assets_showing_technical_caution": assets_showing_technical_caution,
     }
 
 
@@ -123,10 +125,10 @@ def print_asset_report(analysis: dict) -> None:
     print(f"RSI 14: {analysis['rsi_14']:.2f}")
     print(f"7-day change: {analysis['change_7d']:.2f}%")
     print(f"Signal: {analysis['signal']}")
-    print(f"Executive action: {analysis['action_recommendation']}")
-    print(f"Risk level: {analysis['risk_level']}")
-    print(f"Decision type: {analysis['decision_type']}")
-    print(f"Explanation: {analysis['explanation']}")
+    print(f"Classification note: {analysis['signal_interpretation']}")
+    print(f"Research risk level: {analysis['research_risk_level']}")
+    print(f"Research classification: {analysis['research_classification']}")
+    print(f"Interpretation: {analysis['interpretation']}")
     print()
 
 
@@ -135,8 +137,14 @@ def print_summary(summary: dict) -> None:
     print("Summary:")
     print(f"- Strongest asset: {summary['strongest_asset']}")
     print(f"- Weakest asset: {summary['weakest_asset']}")
-    print(f"- Assets to watch: {', '.join(summary['assets_to_watch']) or 'none'}")
-    print(f"- Assets to avoid: {', '.join(summary['assets_to_avoid']) or 'none'}")
+    print(
+        "- Assets for further observation: "
+        f"{', '.join(summary['assets_for_observation']) or 'none'}"
+    )
+    print(
+        "- Assets showing technical caution: "
+        f"{', '.join(summary['assets_showing_technical_caution']) or 'none'}"
+    )
 
 
 def build_csv_rows(analyses: list[dict]) -> list[dict]:
@@ -155,7 +163,7 @@ def build_csv_rows(analyses: list[dict]) -> list[dict]:
                 "rsi_14": analysis["rsi_14"],
                 "change_7d": analysis["change_7d"],
                 "signal": analysis["signal"],
-                "explanation": analysis["explanation"],
+                "interpretation": analysis["interpretation"],
             }
         )
 
@@ -235,8 +243,14 @@ def print_backtest_summary(symbol: str, summary: dict) -> None:
             count = summary["count_by_signal"][signal]
             print(_format_signal_return_line(signal, average_return, count))
 
-    print(f"Best signal: {summary['best_signal_by_average_return']}")
-    print(f"Worst signal: {summary['worst_signal_by_average_return']}")
+    print(
+        "Signal with highest average forward return: "
+        f"{summary['best_signal_by_average_return']}"
+    )
+    print(
+        "Signal with lowest average forward return: "
+        f"{summary['worst_signal_by_average_return']}"
+    )
     print(
         "Note: this educational backtest reviews historical behavior and is not "
         "proof of future performance. Signals are analytical classifications, "
@@ -278,6 +292,14 @@ def generate_backtest_summary_markdown(symbol: str, summary: dict) -> str:
         f"- Lookback window: {BACKTEST_LOOKBACK_WINDOW} candles",
         f"- Forward return window: {BACKTEST_FORWARD_DAYS} days",
         "",
+        "## Educational Use Note",
+        "",
+        (
+            "Signals are analytical classifications generated by simple technical "
+            "rules. They are not trade orders, investment recommendations, or "
+            "financial advice."
+        ),
+        "",
         "## Results",
         "",
         f"- Total signals: {summary['total_signals']}",
@@ -285,8 +307,14 @@ def generate_backtest_summary_markdown(symbol: str, summary: dict) -> str:
             "- Average 7-day forward return: "
             f"{summary['average_forward_return']:.2f}%"
         ),
-        f"- Best signal: {summary['best_signal_by_average_return']}",
-        f"- Worst signal: {summary['worst_signal_by_average_return']}",
+        (
+            "- Signal with highest average forward return: "
+            f"{summary['best_signal_by_average_return']}"
+        ),
+        (
+            "- Signal with lowest average forward return: "
+            f"{summary['worst_signal_by_average_return']}"
+        ),
         "",
         "## Average Return by Signal",
         "",
@@ -391,8 +419,14 @@ def print_multi_asset_backtest(asset_summaries: list[dict]) -> None:
             "Average 7-day forward return: "
             f"{asset['average_forward_return']:.2f}%"
         )
-        print(f"Best signal: {asset['best_signal_by_average_return']}")
-        print(f"Worst signal: {asset['worst_signal_by_average_return']}")
+        print(
+            "Signal with highest average forward return: "
+            f"{asset['best_signal_by_average_return']}"
+        )
+        print(
+            "Signal with lowest average forward return: "
+            f"{asset['worst_signal_by_average_return']}"
+        )
 
 
 def _get_best_asset(asset_summaries: list[dict]) -> dict | None:
@@ -443,6 +477,14 @@ def generate_multi_asset_backtest_markdown(asset_summaries: list[dict]) -> str:
         f"- Lookback window: {BACKTEST_LOOKBACK_WINDOW} candles",
         f"- Forward return window: {BACKTEST_FORWARD_DAYS} days",
         "",
+        "## Educational Use Note",
+        "",
+        (
+            "Signals are analytical classifications generated by simple technical "
+            "rules. They are not trade orders, investment recommendations, or "
+            "financial advice."
+        ),
+        "",
         "## Asset-Level Summary",
         "",
     ]
@@ -460,22 +502,28 @@ def generate_multi_asset_backtest_markdown(asset_summaries: list[dict]) -> str:
                         "- Average 7-day forward return: "
                         f"{asset['average_forward_return']:.2f}%"
                     ),
-                    f"- Best signal: {asset['best_signal_by_average_return']}",
-                    f"- Worst signal: {asset['worst_signal_by_average_return']}",
+                    (
+                        "- Signal with highest average forward return: "
+                        f"{asset['best_signal_by_average_return']}"
+                    ),
+                    (
+                        "- Signal with lowest average forward return: "
+                        f"{asset['worst_signal_by_average_return']}"
+                    ),
                     "",
                 ]
             )
 
     lines.extend(
         [
-            "## Best and Worst Assets",
+            "## Relative Average Forward Returns",
             "",
             (
-                "- Best performing asset by average forward return: "
+                "- Asset with highest average forward return: "
                 f"{_format_asset_performance(best_asset)}"
             ),
             (
-                "- Worst performing asset by average forward return: "
+                "- Asset with lowest average forward return: "
                 f"{_format_asset_performance(worst_asset)}"
             ),
             "",
@@ -542,6 +590,7 @@ def main() -> None:
     analyses = []
 
     print("Kairon Crypto Agent - Multi-Asset Analysis")
+    print("Educational research output only; not financial advice.")
     print("--------------------------------------------------")
     print()
 

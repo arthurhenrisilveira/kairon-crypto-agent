@@ -6,6 +6,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Local agent/tooling metadata
+.agents/
+.codex/
+
 # Local configuration and secrets
 .env
 .env.*
@@ -18,6 +22,11 @@ secrets.*
 data/*.csv
 data/*.json
 data/*.parquet
+
+# Generated local reports
+reports/kairon_market_report_latest.md
+reports/kairon_backtest_summary.md
+reports/kairon_multi_asset_backtest_summary.md
 
 # Test, lint, and notebook caches
 .pytest_cache/

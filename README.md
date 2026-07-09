@@ -1,16 +1,18 @@
 # Kairon Crypto Agent
 
-Kairon Crypto Agent is a beginner-friendly educational Python project for exploring simple cryptocurrency market analysis.
+Kairon Crypto Agent is a beginner-friendly educational and research-oriented Python project for exploring simple cryptocurrency market analysis.
 
-The current version analyzes major crypto pairs with public market data, calculates basic technical indicators, assigns plain-English signal labels, and writes Markdown/CSV reports. It does not use API keys, does not authenticate with any exchange account, and does not execute trades.
+This project is for educational and research purposes only. It does not provide financial advice, investment recommendations, trade signals, or automated trading.
+
+The current version analyzes major crypto pairs with public market data, calculates basic technical indicators, assigns plain-English analytical classifications, and writes Markdown/CSV research outputs. It does not use API keys, does not authenticate with any exchange account, and does not execute trades.
 
 ## Features
 
 - Multi-asset analysis for `BTCUSDT`, `ETHUSDT`, `BNBUSDT`, and `SOLUSDT`.
 - Simple indicators: 7-day SMA, 21-day SMA, 14-period RSI, and 7-day percentage change.
-- Beginner-friendly signal labels such as `WATCH_BUY`, `HOLD`, `WEAKNESS_AVOID`, and `OVERBOUGHT_WAIT`.
-- Markdown market report saved to `reports/kairon_market_report_latest.md`.
-- CSV exports saved to `data/` for the latest analysis and historical runs.
+- Beginner-friendly analytical classification names such as `WATCH_BUY`, `HOLD`, `WEAKNESS_AVOID`, and `OVERBOUGHT_WAIT`.
+- Markdown research report saved locally to `reports/kairon_market_report_latest.md`.
+- CSV exports saved to `data/` for current analysis and historical runs.
 - Educational backtests that compare past signals with later 7-day returns.
 - No API keys, no exchange account login, and no trade execution.
 
@@ -19,7 +21,7 @@ The current version analyzes major crypto pairs with public market data, calcula
 ```text
 kairon-crypto-agent/
   docs/       Project notes, signal legend, disclaimer, and architecture overview
-  reports/    Sample generated Markdown reports
+  reports/    Static sample Markdown reports
   src/        Python source code for data fetching, indicators, signals, reports, and backtests
   data/       Local generated CSV exports, ignored by git
 ```
@@ -35,7 +37,7 @@ kairon-crypto-agent/
 Clone the repository and enter the project folder:
 
 ```bash
-git clone https://github.com/your-username/kairon-crypto-agent.git
+git clone https://github.com/arthurhenrisilveira/kairon-crypto-agent.git
 cd kairon-crypto-agent
 ```
 
@@ -72,7 +74,7 @@ From the project root:
 python src/main.py
 ```
 
-The script prints a market summary, writes report files, and runs educational backtests. It only uses public market-data endpoints. It does not use credentials and does not place orders.
+The script prints an educational market summary, writes local research output files, and runs educational backtests. It only uses public market-data endpoints. It does not use credentials and does not place orders.
 
 ## Example Commands
 
@@ -88,7 +90,7 @@ Check that the Python files compile without running the market workflow:
 python -m py_compile src/main.py src/fetch_market_data.py src/indicators.py src/strategy_rules.py src/report_generator.py src/backtesting.py
 ```
 
-Open the latest generated Markdown report:
+Open the generated Markdown research report after a local run:
 
 ```bash
 code reports/kairon_market_report_latest.md
@@ -111,10 +113,10 @@ SMA 21: 66519.82
 RSI 14: 48.45
 7-day change: 7.39%
 Signal: HOLD
-Executive action: Do not take new action. Continue monitoring.
-Risk level: Low-Medium
-Decision type: No Action
-Explanation: No clear setup.
+Classification note: The rule set does not identify a clear positive or defensive technical condition.
+Research risk level: Low-Medium
+Research classification: Neutral Condition
+Interpretation: The rule set does not identify a clear technical condition.
 ```
 
 The run also prints where files were saved:
@@ -130,13 +132,13 @@ Multi-asset backtest summary saved: reports/kairon_multi_asset_backtest_summary.
 
 ## Reports
 
-Sample Markdown reports are committed in `reports/`:
+Static sample Markdown reports are committed in `reports/`:
 
-- `reports/kairon_market_report_latest.md`
-- `reports/kairon_backtest_summary.md`
-- `reports/kairon_multi_asset_backtest_summary.md`
+- `reports/sample_market_report.md`
+- `reports/sample_backtest_summary.md`
+- `reports/sample_multi_asset_backtest_summary.md`
 
-Generated CSV files are written to `data/` and ignored by git because they are local run outputs.
+Generated CSV files are written to `data/` and ignored by git because they are local run outputs. Generated Markdown reports use the `reports/kairon_*` filenames and are also ignored by git so public commits do not publish current market snapshots.
 
 ## Documentation
 
@@ -147,7 +149,11 @@ Generated CSV files are written to `data/` and ignored by git because they are l
 
 ## Disclaimer
 
-This project is for educational and research purposes only. It is not financial advice, investment advice, trading advice, or a recommendation to buy or sell any asset. Crypto markets are risky and volatile. Kairon signals are analytical classifications, not trade orders. Always do your own research.
+This project is for educational and research purposes only. It does not provide financial advice, investment recommendations, trade signals, or automated trading. Crypto markets are risky and volatile. Kairon signals are analytical classifications generated by simple technical rules, not trade orders.
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
 
 ## Roadmap
 
@@ -156,4 +162,4 @@ This project is for educational and research purposes only. It is not financial 
 - Make tracked assets configurable from a simple settings file.
 - Add clearer error messages for unavailable public market data.
 - Add richer risk and volatility context while keeping the project educational.
-- Explore a paper-trading simulator that records hypothetical decisions without placing live orders.
+- Explore offline hypothetical scenario logging without connecting to exchanges.
