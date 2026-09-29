@@ -5,7 +5,14 @@ from datetime import datetime
 from pathlib import Path
 
 from backtesting import run_signal_backtest, summarize_backtest
+from asset_explainability import generate_asset_explanation
 from fetch_market_data import get_klines
+from market_condition import (
+    SIGNAL_ORDER,
+    count_signals,
+    determine_market_condition,
+    explain_market_condition,
+)
 from report_generator import generate_markdown_report
 from strategy_rules import generate_basic_signal
 
@@ -15,8 +22,13 @@ BACKTEST_SYMBOL = "BTCUSDT"
 BACKTEST_CANDLE_LIMIT = 180
 BACKTEST_LOOKBACK_WINDOW = 21
 BACKTEST_FORWARD_DAYS = 7
-OBSERVATION_SIGNALS = ["WATCH_BUY", "OVERSOLD_WATCH"]
-TECHNICAL_CAUTION_SIGNALS = ["WEAKNESS_AVOID", "OVERBOUGHT_WAIT", "OVERSOLD_BUT_WEAK"]
+POSITIVE_STRUCTURE_SIGNALS = ["WATCH_BUY"]
+FURTHER_OBSERVATION_SIGNALS = ["OVERSOLD_WATCH"]
+EXTENDED_OR_TECHNICAL_CAUTION_SIGNALS = [
+    "OVERBOUGHT_WAIT",
+    "WEAKNESS_AVOID",
+    "OVERSOLD_BUT_WEAK",
+]
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_FOLDER = PROJECT_ROOT / "data"
 REPORTS_FOLDER = PROJECT_ROOT / "reports"
@@ -93,58 +105,81 @@ def build_summary(analyses: list[dict]) -> dict:
         return {
             "strongest_asset": "unavailable",
             "weakest_asset": "unavailable",
-            "assets_for_observation": [],
-            "assets_showing_technical_caution": [],
+            "assets_with_positive_structure": [],
+            "assets_extended_or_technical_caution": [],
+            "assets_requiring_further_observation": [],
         }
 
     strongest = max(analyses, key=lambda item: item["change_7d"])
     weakest = min(analyses, key=lambda item: item["change_7d"])
-    assets_for_observation = [
-        item["symbol"] for item in analyses if item["signal"] in OBSERVATION_SIGNALS
-    ]
-    assets_showing_technical_caution = [
+    assets_with_positive_structure = [
         item["symbol"]
         for item in analyses
-        if item["signal"] in TECHNICAL_CAUTION_SIGNALS
+        if item["signal"] in POSITIVE_STRUCTURE_SIGNALS
+    ]
+    assets_extended_or_technical_caution = [
+        item["symbol"]
+        for item in analyses
+        if item["signal"] in EXTENDED_OR_TECHNICAL_CAUTION_SIGNALS
+    ]
+    assets_requiring_further_observation = [
+        item["symbol"]
+        for item in analyses
+        if item["signal"] in FURTHER_OBSERVATION_SIGNALS
     ]
 
     return {
         "strongest_asset": f"{strongest['symbol']} ({strongest['change_7d']:.2f}%)",
         "weakest_asset": f"{weakest['symbol']} ({weakest['change_7d']:.2f}%)",
-        "assets_for_observation": assets_for_observation,
-        "assets_showing_technical_caution": assets_showing_technical_caution,
+        "assets_with_positive_structure": assets_with_positive_structure,
+        "assets_extended_or_technical_caution": assets_extended_or_technical_caution,
+        "assets_requiring_further_observation": assets_requiring_further_observation,
     }
 
 
 def print_asset_report(analysis: dict) -> None:
-    """Print one asset analysis block."""
-    print(analysis["symbol"])
-    print(f"Current price: {analysis['current_price']:.2f}")
-    print(f"SMA 7: {analysis['sma_7']:.2f}")
-    print(f"SMA 21: {analysis['sma_21']:.2f}")
-    print(f"RSI 14: {analysis['rsi_14']:.2f}")
-    print(f"7-day change: {analysis['change_7d']:.2f}%")
+    """Print one concise asset explanation block."""
+    explanation = generate_asset_explanation(analysis)
+    print(f"Asset: {analysis['symbol']}")
     print(f"Signal: {analysis['signal']}")
-    print(f"Classification note: {analysis['signal_interpretation']}")
-    print(f"Research risk level: {analysis['research_risk_level']}")
-    print(f"Research classification: {analysis['research_classification']}")
-    print(f"Interpretation: {analysis['interpretation']}")
+    print(f"Classification: {analysis['classification_label']}")
+    print(f"Research risk: {analysis['research_risk_level']}")
+    print(f"Summary: {explanation['concise_summary']}")
     print()
 
 
 def print_summary(summary: dict) -> None:
     """Print a simple comparison summary across analyzed assets."""
     print("Summary:")
-    print(f"- Strongest asset: {summary['strongest_asset']}")
-    print(f"- Weakest asset: {summary['weakest_asset']}")
+    print(f"- Best relative 7-day performer: {summary['strongest_asset']}")
+    print(f"- Worst 7-day performer: {summary['weakest_asset']}")
     print(
-        "- Assets for further observation: "
-        f"{', '.join(summary['assets_for_observation']) or 'none'}"
+        "- Assets with positive technical structure: "
+        f"{', '.join(summary['assets_with_positive_structure']) or 'none'}"
     )
     print(
-        "- Assets showing technical caution: "
-        f"{', '.join(summary['assets_showing_technical_caution']) or 'none'}"
+        "- Assets classified as extended or technically cautious: "
+        f"{', '.join(summary['assets_extended_or_technical_caution']) or 'none'}"
     )
+    print(
+        "- Assets requiring further observation: "
+        f"{', '.join(summary['assets_requiring_further_observation']) or 'none'}"
+    )
+
+
+def print_market_condition_summary(analyses: list[dict]) -> None:
+    """Print a concise explainable market condition summary."""
+    market_condition = determine_market_condition(analyses)
+    explanation = explain_market_condition(analyses, market_condition)
+    signal_counts = count_signals(analyses)
+
+    print()
+    print(f"Market Condition: {market_condition}")
+    print(f"Explanation: {explanation}")
+    print("Signal distribution:")
+
+    for signal in SIGNAL_ORDER:
+        print(f"- {signal}: {signal_counts[signal]}")
 
 
 def build_csv_rows(analyses: list[dict]) -> list[dict]:
@@ -604,6 +639,7 @@ def main() -> None:
 
     summary = build_summary(analyses)
     print_summary(summary)
+    print_market_condition_summary(analyses)
     write_csv_exports(analyses)
     write_markdown_report(analyses, summary)
     run_btc_backtest()

@@ -7,6 +7,10 @@ from indicators import (
 )
 
 
+RSI_EXTENDED_THRESHOLD = 70
+RSI_OVERSOLD_THRESHOLD = 30
+
+
 SIGNAL_METADATA = {
     "WATCH_BUY": {
         "classification_label": "Positive Technical Structure",
@@ -102,18 +106,18 @@ def generate_basic_signal(symbol: str, closes: list[float]) -> dict:
     rsi_14 = calculate_rsi(closes, 14)
     change_7d = calculate_percentage_change(closes[-8], current_price)
 
-    if current_price > sma_7 > sma_21 and rsi_14 < 70:
+    if current_price > sma_7 > sma_21 and rsi_14 < RSI_EXTENDED_THRESHOLD:
         signal = "WATCH_BUY"
         interpretation = (
             "Price is above both moving averages and RSI is below the overbought "
             "threshold."
         )
-    elif rsi_14 >= 70:
+    elif rsi_14 >= RSI_EXTENDED_THRESHOLD:
         signal = "OVERBOUGHT_WAIT"
         interpretation = (
             "RSI is high, so this rule set classifies the asset as extended."
         )
-    elif current_price < sma_7 < sma_21 and rsi_14 <= 30:
+    elif current_price < sma_7 < sma_21 and rsi_14 <= RSI_OVERSOLD_THRESHOLD:
         signal = "OVERSOLD_BUT_WEAK"
         interpretation = (
             "RSI is low, but price remains below both moving averages. "
@@ -125,7 +129,7 @@ def generate_basic_signal(symbol: str, closes: list[float]) -> dict:
             "Price is below both moving averages, suggesting short-term technical "
             "weakness."
         )
-    elif rsi_14 <= 30:
+    elif rsi_14 <= RSI_OVERSOLD_THRESHOLD:
         signal = "OVERSOLD_WATCH"
         interpretation = (
             "RSI is low and may deserve further observation under this rule set."

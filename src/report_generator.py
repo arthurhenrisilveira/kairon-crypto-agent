@@ -2,60 +2,20 @@
 
 from datetime import datetime
 
+from asset_explainability import generate_asset_explanation
+from market_condition import (
+    SIGNAL_ORDER,
+    count_signals,
+    determine_market_condition,
+    explain_market_condition,
+    get_market_condition_drivers,
+)
 from strategy_rules import SIGNAL_METADATA
-
-
-SIGNAL_LEGEND_ORDER = [
-    "WATCH_BUY",
-    "OVERBOUGHT_WAIT",
-    "HOLD",
-    "WEAKNESS_AVOID",
-    "OVERSOLD_WATCH",
-    "OVERSOLD_BUT_WEAK",
-]
 
 
 def _format_asset_list(symbols: list[str]) -> str:
     """Return a readable asset list for report sections."""
     return ", ".join(symbols) if symbols else "none"
-
-
-def _get_market_condition(results: list[dict]) -> str:
-    """Classify the broad market condition from generated signals."""
-    watch_buy_count = sum(1 for item in results if item["signal"] == "WATCH_BUY")
-    caution_count = sum(
-        1
-        for item in results
-        if item["signal"] in ["WEAKNESS_AVOID", "OVERSOLD_BUT_WEAK"]
-    )
-
-    if watch_buy_count >= 2:
-        return "Risk-on"
-
-    if caution_count >= 2:
-        return "Defensive"
-
-    return "Neutral"
-
-
-def _get_market_interpretation(market_condition: str) -> str:
-    """Explain the broad market condition in beginner-friendly language."""
-    if market_condition == "Risk-on":
-        return (
-            "Multiple assets are showing positive technical structure under "
-            "the educational rule set."
-        )
-
-    if market_condition == "Defensive":
-        return (
-            "Multiple assets are showing weakness or fragile oversold conditions, "
-            "so the educational rule set classifies the backdrop as defensive."
-        )
-
-    return (
-        "Signals are mixed across the tracked assets, so the market does not show "
-        "a clear risk-on or defensive profile."
-    )
 
 
 def _build_signal_legend_table() -> list[str]:
@@ -65,7 +25,7 @@ def _build_signal_legend_table() -> list[str]:
         "| --- | --- | --- | --- | --- | --- |",
     ]
 
-    for signal in SIGNAL_LEGEND_ORDER:
+    for signal in SIGNAL_ORDER:
         metadata = SIGNAL_METADATA[signal]
         lines.append(
             "| "
@@ -80,11 +40,51 @@ def _build_signal_legend_table() -> list[str]:
     return lines
 
 
+def _build_market_condition_section(results: list[dict]) -> list[str]:
+    """Build the explainable market condition section."""
+    market_condition = determine_market_condition(results)
+    explanation = explain_market_condition(results, market_condition)
+    signal_counts = count_signals(results)
+    drivers = get_market_condition_drivers(results)
+
+    lines = [
+        "## Market Condition",
+        "",
+        f"- Classification: {market_condition}",
+        f"- Explanation: {explanation}",
+        "- Signal distribution:",
+        "",
+    ]
+
+    for signal in SIGNAL_ORDER:
+        count = signal_counts[signal]
+        asset_label = "asset" if count == 1 else "assets"
+        lines.append(f"  - {signal}: {count} {asset_label}")
+
+    lines.extend(["", "- Main drivers:", ""])
+
+    for driver in drivers:
+        lines.append(f"  - {driver}")
+
+    lines.extend(
+        [
+            "",
+            (
+                "- Research note: This market condition is based only on simple "
+                "technical rules and should be interpreted as an educational "
+                "classification, not as market advice."
+            ),
+        ]
+    )
+
+    return lines
+
+
 def generate_markdown_report(results: list[dict], summary: dict) -> str:
     """Generate a Markdown market report from analysis results."""
     timestamp = datetime.now().isoformat(timespec="seconds")
-    market_condition = _get_market_condition(results)
-    market_interpretation = _get_market_interpretation(market_condition)
+    market_condition = determine_market_condition(results)
+    market_interpretation = explain_market_condition(results, market_condition)
 
     lines = [
         "# Kairon Crypto Agent - Market Report",
@@ -93,9 +93,7 @@ def generate_markdown_report(results: list[dict], summary: dict) -> str:
         "",
         timestamp,
         "",
-        "## Market Condition",
-        "",
-        market_condition,
+        *_build_market_condition_section(results),
         "",
         "## Educational Use Note",
         "",
@@ -107,15 +105,19 @@ def generate_markdown_report(results: list[dict], summary: dict) -> str:
         "",
         "## Research Summary",
         "",
-        f"- Strongest asset: {summary['strongest_asset']}",
-        f"- Weakest asset: {summary['weakest_asset']}",
+        f"- Best relative 7-day performer: {summary['strongest_asset']}",
+        f"- Worst 7-day performer: {summary['weakest_asset']}",
         (
-            "- Assets for further observation: "
-            f"{_format_asset_list(summary['assets_for_observation'])}"
+            "- Assets with positive technical structure: "
+            f"{_format_asset_list(summary['assets_with_positive_structure'])}"
         ),
         (
-            "- Assets showing technical caution: "
-            f"{_format_asset_list(summary['assets_showing_technical_caution'])}"
+            "- Assets classified as extended or technically cautious: "
+            f"{_format_asset_list(summary['assets_extended_or_technical_caution'])}"
+        ),
+        (
+            "- Assets requiring further observation: "
+            f"{_format_asset_list(summary['assets_requiring_further_observation'])}"
         ),
         f"- Market interpretation: {market_interpretation}",
         "",
@@ -128,6 +130,7 @@ def generate_markdown_report(results: list[dict], summary: dict) -> str:
     ]
 
     for result in results:
+        explanation = generate_asset_explanation(result)
         lines.extend(
             [
                 f"### {result['symbol']}",
@@ -138,11 +141,22 @@ def generate_markdown_report(results: list[dict], summary: dict) -> str:
                 f"- RSI 14: {result['rsi_14']:.2f}",
                 f"- 7-day change: {result['change_7d']:.2f}%",
                 f"- Signal: {result['signal']}",
-                f"- Classification note: {result['signal_interpretation']}",
+                f"- Classification label: {result['classification_label']}",
                 f"- Research risk level: {result['research_risk_level']}",
                 f"- Research classification: {result['research_classification']}",
+                f"- Signal interpretation: {result['signal_interpretation']}",
                 f"- Plain English meaning: {result['plain_english_meaning']}",
-                f"- Interpretation: {result['interpretation']}",
+                "",
+                "#### Explanation",
+                "",
+                f"- Moving-average context: {explanation['moving_average_context']}",
+                f"- RSI context: {explanation['rsi_context']}",
+                f"- Recent performance: {explanation['performance_context']}",
+                f"- Classification reasoning: {explanation['classification_reasoning']}",
+                "",
+                "#### Plain English Summary",
+                "",
+                explanation["concise_summary"],
                 "",
             ]
         )

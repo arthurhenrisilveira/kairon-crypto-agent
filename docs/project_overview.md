@@ -10,8 +10,10 @@ The main workflow starts in `src/main.py`.
 2. `src/fetch_market_data.py` fetches public market data. It does not use API keys or authenticate with an exchange account.
 3. `src/indicators.py` contains simple technical indicator helpers such as SMA, RSI, and percentage change.
 4. `src/strategy_rules.py` combines indicator values into beginner-friendly analytical signals.
-5. `src/report_generator.py` turns analysis results into a Markdown market report.
-6. `src/backtesting.py` runs educational historical signal checks and summarizes later 7-day returns.
+5. `src/asset_explainability.py` describes each generated signal using the asset's actual indicator values.
+6. `src/market_condition.py` explains the broad Market Condition from signal distribution.
+7. `src/report_generator.py` turns analysis results into a Markdown market report.
+8. `src/backtesting.py` runs educational historical signal checks and summarizes later 7-day returns.
 
 ## Data Flow
 
@@ -20,6 +22,8 @@ Public market data
   -> fetch_market_data.py
   -> indicators.py
   -> strategy_rules.py
+  -> asset_explainability.py
+  -> market_condition.py
   -> main.py
   -> reports/*.md and data/*.csv
 ```
@@ -47,6 +51,14 @@ CSV exports are generated in `data/`:
 
 The generated `data/` CSV files and `reports/kairon_*` Markdown files are local
 run outputs and are ignored by git.
+
+## Asset Explainability
+
+Version 0.3 adds an explanation layer after signal generation. It describes the
+current price relative to the 7-day and 21-day SMAs, interprets RSI using the
+existing strategy thresholds, adds 7-day performance as context, and explains
+why the existing signal received its classification. The explanation layer does
+not independently generate or change signals.
 
 ## Safety Boundaries
 

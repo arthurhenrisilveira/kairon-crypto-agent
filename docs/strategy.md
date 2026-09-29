@@ -37,6 +37,25 @@ Examples:
 - `WEAKNESS_AVOID` means price is below important moving averages.
 - `HOLD` means there is no clear technical setup.
 
+## Market Condition
+
+Version 0.2 adds an explainable Market Condition layer in `src/market_condition.py`.
+
+Market Condition does not change the individual signal rules. It counts the generated signals across the tracked assets and classifies the broad group as `Constructive`, `Neutral`, `Extended / Cautious`, `Defensive / Weak`, `Mixed`, or `Unavailable`.
+
+See `docs/market_condition.md` for the full methodology.
+
+## Asset Explainability
+
+Version 0.3 adds `src/asset_explainability.py`. This layer interprets the
+indicator values and signal already returned by `src/strategy_rules.py` so that
+each asset has a specific moving-average context, RSI context, recent-
+performance context, and classification explanation.
+
+It does not make a second signal decision. The strategy layer remains the sole
+source of individual asset classifications. See `docs/asset_explainability.md`
+for the explanation design and limitations.
+
 ## Risk Rules
 
 Kairon signals are analytical classifications only. They should not be treated as financial advice, investment recommendations, trade signals, or automated trading output.
