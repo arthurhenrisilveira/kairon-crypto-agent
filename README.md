@@ -6,7 +6,7 @@ This project is for educational and research purposes only. It does not provide 
 
 The current version analyzes major crypto pairs with public market data, calculates basic technical indicators, assigns plain-English analytical classifications, and writes Markdown/CSV research outputs. It does not use API keys, does not authenticate with any exchange account, and does not execute trades.
 
-Version 0.3 adds asset-level explainability, including dynamic moving-average and RSI context, recent-performance context, and signal reasoning. Version 0.2's explainable Market Condition layer remains available.
+Version 0.4 adds Historical Signal Evaluation. It measures what happened after each existing analytical classification at 1-day, 3-day, and 7-day horizons without changing or optimizing the signal rules. Version 0.3's asset-level explainability and Version 0.2's Market Condition layer remain available.
 
 ## Features
 
@@ -16,6 +16,8 @@ Version 0.3 adds asset-level explainability, including dynamic moving-average an
 - Explainable Market Condition summaries based on transparent signal distribution rules.
 - Asset-level explanations that use each asset's actual indicator values and existing signal classification.
 - Dynamic moving-average, RSI, and recent-performance context in Markdown reports.
+- Historical signal evaluation with pooled and asset-level descriptive statistics.
+- Separate 1-day, 3-day, and 7-day forward-return evaluation using existing signals.
 - Markdown research report saved locally to `reports/kairon_market_report_latest.md`.
 - CSV exports saved to `data/` for current analysis and historical runs.
 - Educational backtests that compare past signals with later 7-day returns.
@@ -27,14 +29,14 @@ Version 0.3 adds asset-level explainability, including dynamic moving-average an
 kairon-crypto-agent/
   docs/       Project notes, signal legend, disclaimer, and architecture overview
   reports/    Static sample Markdown reports
-  src/        Python source code for data fetching, indicators, signals, reports, and backtests
+  src/        Python source code for data fetching, indicators, signals, reports, evaluation, and backtests
   data/       Local generated CSV exports, ignored by git
 ```
 
 ## Requirements
 
 - Python 3.10 or newer
-- Internet access when running `python src/main.py`, because the script reads public market data
+- Internet access when running `python src/main.py` or `python src/historical_analysis.py`, because these scripts read public market data
 - `requests`, installed from `requirements.txt`
 
 ## Install
@@ -92,7 +94,7 @@ python src/main.py
 Check that the Python files compile without running the market workflow:
 
 ```bash
-python -m py_compile src/main.py src/fetch_market_data.py src/indicators.py src/strategy_rules.py src/report_generator.py src/backtesting.py src/market_condition.py src/asset_explainability.py
+python -m py_compile src/main.py src/fetch_market_data.py src/indicators.py src/strategy_rules.py src/report_generator.py src/backtesting.py src/market_condition.py src/asset_explainability.py src/historical_signal_evaluation.py src/historical_report_generator.py src/historical_analysis.py
 ```
 
 Open the generated Markdown research report after a local run:
@@ -102,6 +104,17 @@ code reports/kairon_market_report_latest.md
 ```
 
 If you do not use VS Code, open the same file with any text editor.
+
+Run the separate historical evaluation workflow:
+
+```bash
+python src/historical_analysis.py
+```
+
+This creates a descriptive historical report at
+`reports/kairon_historical_signal_evaluation_latest.md` and a detailed
+occurrence export at `data/kairon_historical_signal_occurrences.csv`. Both are
+local generated outputs and are ignored by Git.
 
 ## Example Output
 
@@ -154,6 +167,7 @@ Static sample Markdown reports are committed in `reports/`:
 - `reports/sample_market_report.md`
 - `reports/sample_backtest_summary.md`
 - `reports/sample_multi_asset_backtest_summary.md`
+- `reports/sample_historical_signal_evaluation.md`
 
 Generated CSV files are written to `data/` and ignored by git because they are local run outputs. Generated Markdown reports use the `reports/kairon_*` filenames and are also ignored by git so public commits do not publish current market snapshots.
 
@@ -163,6 +177,7 @@ Generated CSV files are written to `data/` and ignored by git because they are l
 - `docs/signal_legend.md` explains each signal label.
 - `docs/market_condition.md` explains the v0.2 Market Condition methodology.
 - `docs/asset_explainability.md` explains the v0.3 asset-level explanation layer.
+- `docs/historical_signal_evaluation.md` explains the v0.4 historical evaluation methodology.
 - `docs/strategy.md` outlines the strategy research direction.
 - `docs/disclaimer.md` contains the educational disclaimer.
 

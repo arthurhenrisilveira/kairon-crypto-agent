@@ -56,6 +56,17 @@ It does not make a second signal decision. The strategy layer remains the sole
 source of individual asset classifications. See `docs/asset_explainability.md`
 for the explanation design and limitations.
 
+## Historical Signal Evaluation
+
+Version 0.4 adds `src/historical_signal_evaluation.py` and the separate
+`python src/historical_analysis.py` workflow. It recreates historical signals
+with the existing strategy rules and measures subsequent 1-day, 3-day, and
+7-day price returns. It does not optimize parameters, alter signals, or treat
+classifications as trades.
+
+See `docs/historical_signal_evaluation.md` for the methodology, sample-size
+notes, pooled-versus-asset-level interpretation, and limitations.
+
 ## Risk Rules
 
 Kairon signals are analytical classifications only. They should not be treated as financial advice, investment recommendations, trade signals, or automated trading output.
@@ -78,6 +89,12 @@ Backtest outputs are saved in:
 - `reports/kairon_multi_asset_backtest_summary.md`
 - `data/kairon_backtest_btcusdt.csv`
 - `data/kairon_backtest_multi_asset.csv`
+
+Historical Signal Evaluation is related but separate. Backtesting reviews a
+specified simplified strategy workflow over historical candles. Historical
+Signal Evaluation records every analytical classification and summarizes what
+happened afterward without assuming that `WATCH_BUY` means buy or that
+`WEAKNESS_AVOID` means sell.
 
 ## Research Context
 

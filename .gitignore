@@ -27,6 +27,7 @@ data/*.parquet
 reports/kairon_market_report_latest.md
 reports/kairon_backtest_summary.md
 reports/kairon_multi_asset_backtest_summary.md
+reports/kairon_historical_signal_evaluation_latest.md
 
 # Test, lint, and notebook caches
 .pytest_cache/

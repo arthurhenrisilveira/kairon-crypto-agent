@@ -14,6 +14,9 @@ The main workflow starts in `src/main.py`.
 6. `src/market_condition.py` explains the broad Market Condition from signal distribution.
 7. `src/report_generator.py` turns analysis results into a Markdown market report.
 8. `src/backtesting.py` runs educational historical signal checks and summarizes later 7-day returns.
+9. `src/historical_signal_evaluation.py` evaluates every existing signal at 1-day, 3-day, and 7-day forward horizons.
+10. `src/historical_report_generator.py` renders pooled and asset-level historical evaluation results.
+11. `src/historical_analysis.py` is the separate command-line entry point for the v0.4 workflow.
 
 ## Data Flow
 
@@ -28,6 +31,18 @@ Public market data
   -> reports/*.md and data/*.csv
 ```
 
+Historical evaluation uses the same strategy layer in a separate branch:
+
+```text
+Historical public candles
+  -> strategy_rules.py generates historical signals
+  -> historical_signal_evaluation.py calculates forward returns and statistics
+  -> historical_report_generator.py
+  -> historical_analysis.py
+  -> reports/kairon_historical_signal_evaluation_latest.md
+     and data/kairon_historical_signal_occurrences.csv
+```
+
 ## Outputs
 
 Markdown reports are generated locally in `reports/`:
@@ -35,12 +50,14 @@ Markdown reports are generated locally in `reports/`:
 - `reports/kairon_market_report_latest.md`
 - `reports/kairon_backtest_summary.md`
 - `reports/kairon_multi_asset_backtest_summary.md`
+- `reports/kairon_historical_signal_evaluation_latest.md`
 
 Static sample reports are committed in `reports/`:
 
 - `reports/sample_market_report.md`
 - `reports/sample_backtest_summary.md`
 - `reports/sample_multi_asset_backtest_summary.md`
+- `reports/sample_historical_signal_evaluation.md`
 
 CSV exports are generated in `data/`:
 
@@ -48,9 +65,19 @@ CSV exports are generated in `data/`:
 - `data/kairon_analysis_history.csv`
 - `data/kairon_backtest_btcusdt.csv`
 - `data/kairon_backtest_multi_asset.csv`
+- `data/kairon_historical_signal_occurrences.csv`
 
 The generated `data/` CSV files and `reports/kairon_*` Markdown files are local
 run outputs and are ignored by git.
+
+## Backtesting and Historical Signal Evaluation
+
+The existing backtesting workflow checks simplified historical signal behavior
+over a selected forward window. Version 0.4's Historical Signal Evaluation is a
+separate descriptive measurement layer: it records every analytical
+classification, calculates 1-day, 3-day, and 7-day forward returns, and
+summarizes the results both across assets and separately by asset. Neither
+workflow treats a signal as a trade instruction.
 
 ## Asset Explainability
 
