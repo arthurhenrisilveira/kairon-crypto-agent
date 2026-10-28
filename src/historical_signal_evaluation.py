@@ -8,6 +8,7 @@ decision or changes the existing strategy logic.
 from __future__ import annotations
 
 from datetime import datetime
+import math
 from statistics import median
 from typing import Iterable
 
@@ -20,6 +21,7 @@ MINIMUM_SIGNAL_CANDLES = 22
 SAMPLE_SIZE_VERY_SMALL_MAX = 9
 SAMPLE_SIZE_SMALL_MAX = 29
 SAMPLE_SIZE_MODERATE_MAX = 99
+SIGNAL_EVALUATION_START_INDEX = MINIMUM_SIGNAL_CANDLES - 1
 
 
 def _horizon_key(horizon: int) -> str:
@@ -53,6 +55,30 @@ def _format_period(dates: list[str]) -> str:
     if not dates:
         return "unavailable"
     return f"{min(dates)} to {max(dates)}"
+
+
+def _is_finite_number(value: object) -> bool:
+    """Return whether a value can be used in a numeric calculation."""
+    try:
+        return math.isfinite(float(value))
+    except (TypeError, ValueError):
+        return False
+
+
+def _is_valid_price(value: object) -> bool:
+    """Return whether a close price is finite and non-zero."""
+    return _is_finite_number(value) and float(value) != 0
+
+
+def _sort_candles(candles: list[dict]) -> list[dict]:
+    """Return candles in stable chronological order without mutating input."""
+    return [
+        candle
+        for _, candle in sorted(
+            enumerate(candles),
+            key=lambda item: (_format_candle_date(item[1], item[0]), item[0]),
+        )
+    ]
 
 
 def get_market_data_period(candles_by_asset: dict[str, list[dict]]) -> str:
@@ -90,7 +116,7 @@ def calculate_forward_return(
     index: int,
     horizon: int,
 ) -> float | None:
-    """Calculate a simple forward percentage return when future data exists."""
+    """Calculate a simple forward percentage return when data is usable."""
     if horizon <= 0 or index < 0 or index >= len(prices):
         return None
 
@@ -99,11 +125,14 @@ def calculate_forward_return(
         return None
 
     signal_day_price = prices[index]
-    if signal_day_price == 0:
+    if not _is_valid_price(signal_day_price):
         return None
 
     future_price = prices[future_index]
-    return ((future_price - signal_day_price) / signal_day_price) * 100
+    if not _is_valid_price(future_price):
+        return None
+
+    return ((float(future_price) - float(signal_day_price)) / float(signal_day_price)) * 100
 
 
 def evaluate_signal_occurrence(
@@ -119,19 +148,24 @@ def evaluate_signal_occurrence(
     measurement and can never influence the classification.
     """
     normalized_horizons = _validate_horizons(horizons)
-    if index < MINIMUM_SIGNAL_CANDLES - 1 or index >= len(candles):
+    if index < SIGNAL_EVALUATION_START_INDEX or index >= len(candles):
         raise ValueError(
-            f"Signal index must be between {MINIMUM_SIGNAL_CANDLES - 1} and "
+            f"Signal index must be between {SIGNAL_EVALUATION_START_INDEX} and "
             f"{len(candles) - 1}."
         )
 
-    closes = [candle["close"] for candle in candles]
+    closes = [candle.get("close") for candle in candles]
+    if any(not _is_valid_price(close) for close in closes[: index + 1]):
+        raise ValueError("Signal history contains a missing, zero, or non-finite close price.")
+
     signal_result = generate_basic_signal(symbol, closes[: index + 1])
     prices = closes
+    signal_timestamp = _format_candle_date(candles[index], index)
 
     occurrence = {
         "asset": signal_result["symbol"],
-        "date": _format_candle_date(candles[index], index),
+        "date": signal_timestamp,
+        "signal_timestamp": signal_timestamp,
         "price": signal_result["current_price"],
         "signal": signal_result["signal"],
         "sma_7": signal_result["sma_7"],
@@ -141,10 +175,16 @@ def evaluate_signal_occurrence(
     }
 
     for horizon in normalized_horizons:
+        future_index = index + horizon
         occurrence[f"forward_return_{_horizon_key(horizon)}"] = calculate_forward_return(
             prices,
             index,
             horizon,
+        )
+        occurrence[f"forward_timestamp_{_horizon_key(horizon)}"] = (
+            _format_candle_date(candles[future_index], future_index)
+            if future_index < len(candles)
+            else None
         )
 
     return occurrence
@@ -157,13 +197,24 @@ def collect_historical_signal_occurrences(
 ) -> list[dict]:
     """Collect all signal occurrences available in one asset's candle history."""
     normalized_horizons = _validate_horizons(horizons)
-    if len(candles) < MINIMUM_SIGNAL_CANDLES:
+    ordered_candles = _sort_candles(candles)
+    if len(ordered_candles) < MINIMUM_SIGNAL_CANDLES:
         return []
 
-    return [
-        evaluate_signal_occurrence(symbol, candles, index, normalized_horizons)
-        for index in range(MINIMUM_SIGNAL_CANDLES - 1, len(candles))
-    ]
+    occurrences = []
+    for index in range(SIGNAL_EVALUATION_START_INDEX, len(ordered_candles)):
+        closes = [candle.get("close") for candle in ordered_candles]
+        if any(not _is_valid_price(close) for close in closes[: index + 1]):
+            continue
+        occurrence = evaluate_signal_occurrence(
+            symbol,
+            ordered_candles,
+            index,
+            normalized_horizons,
+        )
+        occurrences.append(occurrence)
+
+    return occurrences
 
 
 def get_sample_size_note(sample_size: int) -> str:
@@ -195,33 +246,52 @@ def get_sample_size_note(sample_size: int) -> str:
     )
 
 
-def _empty_return_summary(sample_size: int = 0) -> dict:
+def _empty_return_summary(
+    sample_size: int = 0,
+    incomplete_future_window_count: int = 0,
+) -> dict:
     """Build a return summary without fabricating missing values."""
     return {
         "observations": sample_size,
+        "sample_count": sample_size,
+        "incomplete_future_window_count": incomplete_future_window_count,
         "average_return": None,
         "median_return": None,
         "positive_return_percentage": None,
         "best_observed_return": None,
         "worst_observed_return": None,
         "sample_size_note": get_sample_size_note(sample_size),
+        "effective_n_note": get_sample_size_note(sample_size),
     }
 
 
-def _summarize_returns(returns: list[float]) -> dict:
+def _summarize_returns(
+    returns: list[float],
+    incomplete_future_window_count: int = 0,
+) -> dict:
     """Calculate descriptive statistics for valid forward returns."""
-    if not returns:
-        return _empty_return_summary()
+    valid_returns = [
+        float(return_value)
+        for return_value in returns
+        if _is_finite_number(return_value)
+    ]
+    if not valid_returns:
+        return _empty_return_summary(
+            incomplete_future_window_count=incomplete_future_window_count,
+        )
 
-    positive_count = sum(return_value > 0 for return_value in returns)
+    positive_count = sum(return_value > 0 for return_value in valid_returns)
     return {
-        "observations": len(returns),
-        "average_return": sum(returns) / len(returns),
-        "median_return": median(returns),
-        "positive_return_percentage": (positive_count / len(returns)) * 100,
-        "best_observed_return": max(returns),
-        "worst_observed_return": min(returns),
-        "sample_size_note": get_sample_size_note(len(returns)),
+        "observations": len(valid_returns),
+        "sample_count": len(valid_returns),
+        "incomplete_future_window_count": incomplete_future_window_count,
+        "average_return": sum(valid_returns) / len(valid_returns),
+        "median_return": median(valid_returns),
+        "positive_return_percentage": (positive_count / len(valid_returns)) * 100,
+        "best_observed_return": max(valid_returns),
+        "worst_observed_return": min(valid_returns),
+        "sample_size_note": get_sample_size_note(len(valid_returns)),
+        "effective_n_note": get_sample_size_note(len(valid_returns)),
     }
 
 
@@ -243,9 +313,17 @@ def _summarize_for_signal(
         returns = [
             occurrence.get(key)
             for occurrence in signal_occurrences
-            if occurrence.get(key) is not None
+            if _is_finite_number(occurrence.get(key))
         ]
-        summary[_horizon_key(horizon)] = _summarize_returns(returns)
+        horizon_summary = _summarize_returns(
+            returns,
+            incomplete_future_window_count=(
+                len(signal_occurrences) - len(returns)
+            ),
+        )
+        horizon_summary["conditional_return_pct"] = _metric_pair(horizon_summary)
+        horizon_summary["effective_n_note"] = EFFECTIVE_N_NOTE
+        summary[_horizon_key(horizon)] = horizon_summary
 
     return summary
 
@@ -289,15 +367,411 @@ def summarize_asset_signal_performance(
     }
 
 
+EFFECTIVE_N_NOTE = (
+    "Raw counts are descriptive, not effective independent sample sizes. "
+    "Overlapping windows, autocorrelation, and cross-asset dependence may make "
+    "observations dependent."
+)
+
+
+def _collect_unconditional_returns(
+    candles: list[dict],
+    horizon: int,
+) -> tuple[list[float], int]:
+    """Collect all eligible asset-day returns and incomplete windows."""
+    if SIGNAL_EVALUATION_START_INDEX >= len(candles):
+        return [], 0
+
+    prices = [candle.get("close") for candle in candles]
+    returns = []
+    incomplete_future_window_count = 0
+
+    for index in range(SIGNAL_EVALUATION_START_INDEX, len(candles)):
+        return_value = calculate_forward_return(prices, index, horizon)
+        if return_value is None:
+            incomplete_future_window_count += 1
+        else:
+            returns.append(return_value)
+
+    return returns, incomplete_future_window_count
+
+
+def summarize_unconditional_performance(
+    candles_by_asset: dict[str, list[dict]],
+    horizons: Iterable[int] = FORWARD_HORIZONS,
+) -> dict:
+    """Summarize unconditional returns using the fixed evaluation boundary."""
+    normalized_horizons = _validate_horizons(horizons)
+    summaries = {}
+
+    for symbol, raw_candles in candles_by_asset.items():
+        asset = symbol.upper()
+        candles = _sort_candles(raw_candles)
+        summaries[asset] = {}
+
+        for horizon in normalized_horizons:
+            returns, incomplete_count = _collect_unconditional_returns(
+                candles,
+                horizon,
+            )
+            horizon_summary = _summarize_returns(
+                returns,
+                incomplete_future_window_count=incomplete_count,
+            )
+            horizon_summary["unconditional_return_pct"] = _metric_pair(
+                horizon_summary
+            )
+            horizon_summary["effective_n_note"] = EFFECTIVE_N_NOTE
+            summaries[asset][_horizon_key(horizon)] = horizon_summary
+
+    return summaries
+
+
+def _metric_pair(summary: dict) -> dict:
+    """Expose mean and median under the v0.5 metric contract."""
+    return {
+        "mean": summary.get("average_return"),
+        "median": summary.get("median_return"),
+    }
+
+
+def _difference(left: float | None, right: float | None) -> float | None:
+    """Return a difference only when both descriptive values exist."""
+    if left is None or right is None:
+        return None
+    return left - right
+
+
+def _build_relative_summary(
+    conditional_summary: dict,
+    unconditional_summary: dict,
+) -> dict:
+    """Compare conditional and unconditional descriptive summaries."""
+    conditional_mean = conditional_summary.get("average_return")
+    conditional_median = conditional_summary.get("median_return")
+    unconditional_mean = unconditional_summary.get("average_return")
+    unconditional_median = unconditional_summary.get("median_return")
+
+    return {
+        "conditional_return_pct": {
+            "mean": conditional_mean,
+            "median": conditional_median,
+        },
+        "unconditional_return_pct": {
+            "mean": unconditional_mean,
+            "median": unconditional_median,
+        },
+        "relative_difference_pct": {
+            "mean": _difference(conditional_mean, unconditional_mean),
+            "median": _difference(conditional_median, unconditional_median),
+        },
+        "sample_count": conditional_summary.get("sample_count", 0),
+        "incomplete_future_window_count": conditional_summary.get(
+            "incomplete_future_window_count",
+            0,
+        ),
+        "unconditional_sample_count": unconditional_summary.get("sample_count", 0),
+        "unconditional_incomplete_future_window_count": (
+            unconditional_summary.get("incomplete_future_window_count", 0)
+        ),
+        "effective_n_note": EFFECTIVE_N_NOTE,
+    }
+
+
+def _conditional_occurrence_counts_by_asset(
+    occurrences: list[dict],
+    signal: str,
+    horizon: int,
+) -> dict[str, int]:
+    """Count valid conditional occurrences by asset for one signal/horizon."""
+    return {
+        asset: sum(
+            1
+            for occurrence in occurrences
+            if occurrence.get("asset") == asset
+            and occurrence.get("signal") == signal
+            and _is_finite_number(
+                occurrence.get(f"forward_return_{_horizon_key(horizon)}")
+            )
+        )
+        for asset in sorted(
+            {
+                occurrence.get("asset", "UNKNOWN")
+                for occurrence in occurrences
+                if occurrence.get("signal") == signal
+            }
+        )
+    }
+
+
+def _weighted_median(weighted_values: list[tuple[float, float, str, int]]) -> float:
+    """Return a deterministic weighted empirical median.
+
+    Each tuple contains a value, its positive weight, the asset label, and the
+    within-asset observation index. If the weighted midpoint falls exactly
+    between two observations, their average mirrors ``statistics.median`` for
+    an unweighted even-sized sample.
+    """
+    ordered_values = sorted(
+        weighted_values,
+        key=lambda item: (item[0], item[2], item[3]),
+    )
+    total_weight = sum(item[1] for item in ordered_values)
+    midpoint = total_weight / 2
+    cumulative_weight = 0.0
+
+    for position, (value, weight, _asset, _index) in enumerate(ordered_values):
+        cumulative_weight += weight
+        if cumulative_weight > midpoint and not math.isclose(
+            cumulative_weight,
+            midpoint,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            return value
+
+        if math.isclose(
+            cumulative_weight,
+            midpoint,
+            rel_tol=1e-12,
+            abs_tol=1e-12,
+        ):
+            if position + 1 >= len(ordered_values):
+                return value
+            return (value + ordered_values[position + 1][0]) / 2
+
+    return ordered_values[-1][0]
+
+
+def _summarize_occurrence_weighted_baseline(
+    returns_by_asset: dict[str, list[float]],
+    incomplete_by_asset: dict[str, int],
+    occurrence_weights: dict[str, int],
+) -> dict:
+    """Summarize baseline returns with signal/horizon-derived asset weights.
+
+    Every valid baseline return within an included asset receives the same
+    within-asset weight. The total weight assigned to that asset equals its
+    valid conditional occurrence count, so both the mean and the empirical
+    median follow the conditional signal composition.
+    """
+    weighted_values = []
+    raw_sample_count = 0
+    incomplete_count = 0
+
+    for asset in sorted(returns_by_asset):
+        asset_weight = occurrence_weights.get(asset, 0)
+        if asset_weight <= 0:
+            continue
+
+        asset_returns = [
+            float(return_value)
+            for return_value in returns_by_asset[asset]
+            if _is_finite_number(return_value)
+        ]
+        raw_sample_count += len(asset_returns)
+        incomplete_count += incomplete_by_asset.get(asset, 0)
+        if not asset_returns:
+            continue
+
+        within_asset_weight = asset_weight / len(asset_returns)
+        weighted_values.extend(
+            (
+                return_value,
+                within_asset_weight,
+                asset,
+                index,
+            )
+            for index, return_value in enumerate(asset_returns)
+        )
+
+    if not weighted_values:
+        summary = _empty_return_summary(
+            sample_size=raw_sample_count,
+            incomplete_future_window_count=incomplete_count,
+        )
+        summary["unconditional_return_pct"] = _metric_pair(summary)
+        summary["effective_n_note"] = EFFECTIVE_N_NOTE
+        return summary
+
+    total_weight = sum(item[1] for item in weighted_values)
+    weighted_mean = sum(
+        value * weight for value, weight, _asset, _index in weighted_values
+    ) / total_weight
+    positive_weight = sum(
+        weight
+        for value, weight, _asset, _index in weighted_values
+        if value > 0
+    )
+    summary = {
+        "observations": raw_sample_count,
+        "sample_count": raw_sample_count,
+        "incomplete_future_window_count": incomplete_count,
+        "average_return": weighted_mean,
+        "median_return": _weighted_median(weighted_values),
+        "positive_return_percentage": (positive_weight / total_weight) * 100,
+        "best_observed_return": max(value for value, *_ in weighted_values),
+        "worst_observed_return": min(value for value, *_ in weighted_values),
+        "sample_size_note": get_sample_size_note(raw_sample_count),
+        "effective_n_note": EFFECTIVE_N_NOTE,
+    }
+    summary["unconditional_return_pct"] = _metric_pair(summary)
+    return summary
+
+
+def _populate_occurrence_baseline_metrics(
+    occurrence: dict,
+    relative_summary: dict,
+    horizon: int,
+) -> None:
+    """Attach row-level baseline metrics for one occurrence and horizon."""
+    horizon_key = _horizon_key(horizon)
+    conditional_return = occurrence.get(f"forward_return_{horizon_key}")
+    unconditional_return = relative_summary["unconditional_return_pct"]["mean"]
+    occurrence[f"conditional_return_pct_{horizon_key}"] = conditional_return
+    occurrence[f"unconditional_return_pct_{horizon_key}"] = unconditional_return
+    occurrence[f"relative_difference_pct_{horizon_key}"] = _difference(
+        conditional_return,
+        unconditional_return,
+    )
+    occurrence[f"sample_count_{horizon_key}"] = relative_summary["sample_count"]
+    occurrence[
+        f"incomplete_future_window_count_{horizon_key}"
+    ] = relative_summary["incomplete_future_window_count"]
+    occurrence[f"effective_n_note_{horizon_key}"] = relative_summary[
+        "effective_n_note"
+    ]
+
+
+def summarize_asset_baseline_relative_performance(
+    occurrences: list[dict],
+    baseline_performance: dict,
+    horizons: Iterable[int] = FORWARD_HORIZONS,
+) -> dict:
+    """Compare signal-conditioned and baseline returns per asset and signal."""
+    normalized_horizons = _validate_horizons(horizons)
+    assets = sorted(
+        set(baseline_performance)
+        | {occurrence.get("asset", "UNKNOWN") for occurrence in occurrences}
+    )
+    relative_performance = {}
+
+    for asset in assets:
+        asset_occurrences = [
+            occurrence
+            for occurrence in occurrences
+            if occurrence.get("asset") == asset
+        ]
+        asset_baseline = baseline_performance.get(asset, {})
+        relative_performance[asset] = {}
+
+        for signal in SIGNAL_ORDER:
+            conditional_by_horizon = _summarize_for_signal(
+                asset_occurrences,
+                signal,
+                normalized_horizons,
+            )
+            relative_performance[asset][signal] = {}
+
+            for horizon in normalized_horizons:
+                horizon_key = _horizon_key(horizon)
+                relative_performance[asset][signal][horizon_key] = (
+                    _build_relative_summary(
+                        conditional_by_horizon[horizon_key],
+                        asset_baseline.get(
+                            horizon_key,
+                            _empty_return_summary(),
+                        ),
+                    )
+                )
+
+    return relative_performance
+
+
+def summarize_pooled_baseline_relative_performance(
+    occurrences: list[dict],
+    candles_by_asset: dict[str, list[dict]],
+    horizons: Iterable[int] = FORWARD_HORIZONS,
+) -> dict:
+    """Build secondary pooled comparisons with per-signal occurrence weights."""
+    normalized_horizons = _validate_horizons(horizons)
+    baseline_returns_by_asset = {}
+    baseline_incomplete_by_asset = {}
+
+    for symbol, raw_candles in candles_by_asset.items():
+        asset = symbol.upper()
+        baseline_returns_by_asset[asset] = {}
+        baseline_incomplete_by_asset[asset] = {}
+        for horizon in normalized_horizons:
+            returns, incomplete_count = _collect_unconditional_returns(
+                _sort_candles(raw_candles),
+                horizon,
+            )
+            baseline_returns_by_asset[asset][horizon] = returns
+            baseline_incomplete_by_asset[asset][horizon] = incomplete_count
+
+    pooled_performance = {}
+    for signal in SIGNAL_ORDER:
+        signal_occurrences = [
+            occurrence
+            for occurrence in occurrences
+            if occurrence.get("signal") == signal
+        ]
+        conditional_by_horizon = _summarize_for_signal(
+            signal_occurrences,
+            signal,
+            normalized_horizons,
+        )
+        pooled_performance[signal] = {}
+
+        for horizon in normalized_horizons:
+            horizon_key = _horizon_key(horizon)
+            occurrence_weights = _conditional_occurrence_counts_by_asset(
+                occurrences,
+                signal,
+                horizon,
+            )
+            unconditional_summary = _summarize_occurrence_weighted_baseline(
+                {
+                    asset: returns_by_horizon[horizon]
+                    for asset, returns_by_horizon in baseline_returns_by_asset.items()
+                },
+                {
+                    asset: incomplete_by_horizon[horizon]
+                    for asset, incomplete_by_horizon in baseline_incomplete_by_asset.items()
+                },
+                occurrence_weights,
+            )
+            relative_summary = _build_relative_summary(
+                conditional_by_horizon[horizon_key],
+                unconditional_summary,
+            )
+            relative_summary["pooled_baseline_asset_weights"] = occurrence_weights
+            relative_summary["pooled_baseline_weight_total"] = sum(
+                occurrence_weights.values()
+            )
+            pooled_performance[signal][horizon_key] = relative_summary
+
+    return pooled_performance
+
+
 def evaluate_historical_signals(
     candles_by_asset: dict[str, list[dict]],
     horizons: Iterable[int] = FORWARD_HORIZONS,
 ) -> dict:
     """Evaluate existing Kairon signals across multiple asset histories."""
     normalized_horizons = _validate_horizons(horizons)
+    normalized_candles_by_asset = {
+        symbol: _sort_candles(candles)
+        for symbol, candles in candles_by_asset.items()
+    }
+    baseline_performance = summarize_unconditional_performance(
+        normalized_candles_by_asset,
+        normalized_horizons,
+    )
     occurrences = []
 
-    for symbol, candles in candles_by_asset.items():
+    for symbol, candles in normalized_candles_by_asset.items():
         occurrences.extend(
             collect_historical_signal_occurrences(symbol, candles, normalized_horizons)
         )
@@ -313,11 +787,53 @@ def evaluate_historical_signals(
         )
         for signal in SIGNAL_ORDER
     }
-    market_data_period = get_market_data_period(candles_by_asset)
+    asset_baseline_relative_performance = (
+        summarize_asset_baseline_relative_performance(
+            occurrences,
+            baseline_performance,
+            normalized_horizons,
+        )
+    )
+    pooled_baseline_relative_performance = (
+        summarize_pooled_baseline_relative_performance(
+            occurrences,
+            normalized_candles_by_asset,
+            normalized_horizons,
+        )
+    )
+
+    for asset, asset_results in asset_baseline_relative_performance.items():
+        existing_asset_results = asset_signal_performance.get(asset, {})
+        for signal, signal_results in asset_results.items():
+            existing_signal_results = existing_asset_results.get(signal, {})
+            for horizon_key, relative_summary in signal_results.items():
+                if horizon_key in existing_signal_results:
+                    existing_signal_results[horizon_key].update(relative_summary)
+
+    for signal, signal_results in pooled_baseline_relative_performance.items():
+        for horizon_key, relative_summary in signal_results.items():
+            signal_performance[signal][horizon_key].update(relative_summary)
+
+    for occurrence in occurrences:
+        asset = occurrence.get("asset")
+        signal = occurrence.get("signal")
+        signal_results = asset_baseline_relative_performance.get(asset, {}).get(
+            signal,
+            {},
+        )
+        for horizon in normalized_horizons:
+            horizon_key = _horizon_key(horizon)
+            result = signal_results.get(horizon_key)
+            if result is None:
+                continue
+            _populate_occurrence_baseline_metrics(occurrence, result, horizon)
+    market_data_period = get_market_data_period(normalized_candles_by_asset)
     valid_signal_evaluation_period = get_valid_signal_evaluation_period(occurrences)
 
     return {
-        "assets_evaluated": sorted(symbol.upper() for symbol in candles_by_asset),
+        "assets_evaluated": sorted(
+            symbol.upper() for symbol in normalized_candles_by_asset
+        ),
         "market_data_period": market_data_period,
         "valid_signal_evaluation_period": valid_signal_evaluation_period,
         # Keep the v0.4 field available for callers that used the original report.
@@ -328,4 +844,7 @@ def evaluate_historical_signals(
         "occurrences": occurrences,
         "signal_performance": signal_performance,
         "asset_signal_performance": asset_signal_performance,
+        "baseline_performance": baseline_performance,
+        "asset_baseline_relative_performance": asset_baseline_relative_performance,
+        "pooled_baseline_relative_performance": pooled_baseline_relative_performance,
     }

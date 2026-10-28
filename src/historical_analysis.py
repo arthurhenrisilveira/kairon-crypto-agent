@@ -25,6 +25,7 @@ HISTORICAL_REPORT_PATH = (
 OCCURRENCE_CSV_COLUMNS = [
     "asset",
     "date",
+    "signal_timestamp",
     "price",
     "signal",
     "sma_7",
@@ -32,9 +33,24 @@ OCCURRENCE_CSV_COLUMNS = [
     "rsi_14",
     "change_7d",
     "forward_return_1d",
+    "forward_timestamp_1d",
     "forward_return_3d",
+    "forward_timestamp_3d",
     "forward_return_7d",
+    "forward_timestamp_7d",
 ]
+OCCURRENCE_CSV_COLUMNS.extend(
+    column
+    for horizon in FORWARD_HORIZONS
+    for column in (
+        f"conditional_return_pct_{horizon}d",
+        f"unconditional_return_pct_{horizon}d",
+        f"relative_difference_pct_{horizon}d",
+        f"sample_count_{horizon}d",
+        f"incomplete_future_window_count_{horizon}d",
+        f"effective_n_note_{horizon}d",
+    )
+)
 
 
 def _display_path(path: Path) -> str:
@@ -90,10 +106,153 @@ def write_historical_report(
 ) -> None:
     """Generate and save the historical evaluation Markdown report."""
     report_path.parent.mkdir(parents=True, exist_ok=True)
+    report = generate_historical_evaluation_markdown(evaluation).rstrip()
+    report = f"{report}\n\n{generate_baseline_relative_markdown(evaluation)}"
     report_path.write_text(
-        generate_historical_evaluation_markdown(evaluation),
+        report,
         encoding="utf-8",
     )
+
+
+def _format_report_percentage(value: float | None) -> str:
+    """Format a baseline-relative percentage for Markdown."""
+    if value is None:
+        return "not available"
+    return f"{value:+.2f}%"
+
+
+def generate_baseline_relative_markdown(evaluation: dict) -> str:
+    """Render the additive v0.5 baseline-relative report section."""
+    horizons = evaluation["forward_horizons"]
+    lines = [
+        "## Baseline & Relative Signal Evaluation",
+        "",
+        (
+            "Asset-level results are primary. Each conditional signal summary is "
+            "compared with the unconditional return of the same asset and horizon "
+            "over the fixed post-warm-up eligible asset-day population. Pooled "
+            "results below are secondary occurrence-weighted descriptive context "
+            "only."
+        ),
+        "",
+        (
+            "Relative difference equals conditional summary minus unconditional "
+            "summary, reported separately for mean and median. Missing, zero, "
+            "non-finite, or unavailable future prices are excluded without "
+            "imputation."
+        ),
+        "",
+        (
+            "Occurrence-weighted pooled baseline means that, separately for each "
+            "signal and horizon, each asset's unconditional return distribution "
+            "receives a total weight equal to that asset's valid conditional "
+            "occurrence count. Baseline asset-day counts do not determine the "
+            "cross-asset weights. The pooled median is the deterministic weighted "
+            "empirical median, not an average of asset medians."
+        ),
+        "",
+        "### Asset-Level Results",
+        "",
+        (
+            "| Asset | Signal | Horizon | Conditional mean | Unconditional mean | "
+            "Relative mean | Conditional median | Unconditional median | "
+            "Relative median | Conditional N | Conditional incomplete | "
+            "Baseline N | Baseline incomplete |"
+        ),
+        (
+            "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | "
+            "---: | ---: | ---: | ---: | ---: |"
+        ),
+    ]
+
+    for asset in evaluation["assets_evaluated"]:
+        asset_results = evaluation["asset_baseline_relative_performance"].get(
+            asset,
+            {},
+        )
+        for signal, signal_results in asset_results.items():
+            for horizon in horizons:
+                result = signal_results[f"{horizon}d"]
+                conditional = result["conditional_return_pct"]
+                unconditional = result["unconditional_return_pct"]
+                relative = result["relative_difference_pct"]
+                lines.append(
+                    "| "
+                    f"{asset} | {signal} | {horizon}D | "
+                    f"{_format_report_percentage(conditional['mean'])} | "
+                    f"{_format_report_percentage(unconditional['mean'])} | "
+                    f"{_format_report_percentage(relative['mean'])} | "
+                    f"{_format_report_percentage(conditional['median'])} | "
+                    f"{_format_report_percentage(unconditional['median'])} | "
+                    f"{_format_report_percentage(relative['median'])} | "
+                    f"{result['sample_count']} | "
+                    f"{result['incomplete_future_window_count']} | "
+                    f"{result['unconditional_sample_count']} | "
+                    f"{result['unconditional_incomplete_future_window_count']} |"
+                )
+
+    lines.extend(
+        [
+            "",
+            "### Pooled Secondary Context",
+            "",
+            (
+                "These pooled rows combine raw observations across assets for "
+                "each signal. Their baseline statistics use the signal/horizon "
+                "occurrence composition described above. They can hide "
+                "asset-level heterogeneity and are descriptive context only; do "
+                "not generalize them beyond the evaluated observations."
+            ),
+            "",
+            (
+                "| Signal | Horizon | Conditional mean | Unconditional mean | "
+                "Relative mean | Conditional median | Unconditional median | "
+                "Relative median | Conditional N | Conditional incomplete | "
+                "Baseline N | Baseline incomplete |"
+            ),
+            (
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | "
+                "---: | ---: | ---: | ---: |"
+            ),
+        ]
+    )
+
+    for signal, signal_results in evaluation[
+        "pooled_baseline_relative_performance"
+    ].items():
+        for horizon in horizons:
+            result = signal_results[f"{horizon}d"]
+            conditional = result["conditional_return_pct"]
+            unconditional = result["unconditional_return_pct"]
+            relative = result["relative_difference_pct"]
+            lines.append(
+                "| "
+                f"{signal} | {horizon}D | "
+                f"{_format_report_percentage(conditional['mean'])} | "
+                f"{_format_report_percentage(unconditional['mean'])} | "
+                f"{_format_report_percentage(relative['mean'])} | "
+                f"{_format_report_percentage(conditional['median'])} | "
+                f"{_format_report_percentage(unconditional['median'])} | "
+                f"{_format_report_percentage(relative['median'])} | "
+                f"{result['sample_count']} | "
+                f"{result['incomplete_future_window_count']} | "
+                f"{result['unconditional_sample_count']} | "
+                f"{result['unconditional_incomplete_future_window_count']} |"
+            )
+
+    lines.extend(
+        [
+            "",
+            (
+                "Effective sample-size note: raw counts are descriptive and are "
+                "not independent sample claims; overlapping windows, "
+                "autocorrelation, cross-asset dependence, pooled heterogeneity, "
+                "multiple horizons, and data-snooping limitations require "
+                "cautious interpretation. Rule and horizon choices remain fixed."
+            ),
+        ]
+    )
+    return "\n".join(lines)
 
 
 def run_historical_evaluation() -> dict:

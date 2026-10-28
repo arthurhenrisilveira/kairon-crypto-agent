@@ -1,6 +1,6 @@
 # Historical Signal Evaluation
 
-Kairon v0.4 adds Historical Signal Evaluation through
+Kairon v0.4 added Historical Signal Evaluation through
 `src/historical_signal_evaluation.py`. The layer answers a narrow descriptive
 question:
 
@@ -10,6 +10,12 @@ question:
 It does not claim that a signal works, predicts future returns, or represents a
 trade.
 
+Kairon v0.5 extends this same evaluation with an unconditional baseline. Each
+signal-conditioned return is compared with the same asset's unconditional
+forward returns at the same horizon over the fixed post-warm-up eligible
+asset-day population. Existing signal identifiers, thresholds, and generation
+behavior are unchanged.
+
 ## Architecture
 
 ```text
@@ -17,7 +23,8 @@ Historical public candles
   -> existing strategy_rules.py
   -> historical signal occurrences
   -> forward-return evaluation
-  -> pooled and asset-level statistics
+  -> asset-level baseline-relative statistics
+  -> secondary pooled descriptive context
   -> Markdown report and CSV export
 ```
 
@@ -86,6 +93,54 @@ The report includes all six existing signal identifiers:
 `WATCH_BUY`, `OVERBOUGHT_WAIT`, `HOLD`, `WEAKNESS_AVOID`, `OVERSOLD_WATCH`, and
 `OVERSOLD_BUT_WEAK`.
 
+## Baseline and Relative Evaluation
+
+The v0.5 unit of analysis is one eligible signal occurrence × asset × forward
+horizon. The approved eligible-period interpretation is A: the reference
+population is every asset-day for the same asset and horizon at or after the
+fixed indicator warm-up boundary, without conditioning on signal
+classification. The configured horizons remain 1 day, 3 days, and 7 days. A
+baseline window still requires a usable signal-day close and future close; no
+value is imputed. Signal collection may skip a date when prior historical
+inputs are invalid, but that conditional classification failure does not remove
+the date from the unconditional population. This keeps the baseline
+denominator independent of signal outcomes. `valid_signal_evaluation_period`
+continues to describe dates with collected signal occurrences and is not a
+replacement for the fixed baseline population definition.
+
+For each asset × signal × horizon, the report and evaluation data expose:
+
+- `conditional_return_pct`: conditional mean and median forward return;
+- `unconditional_return_pct`: same-asset, same-horizon baseline mean and median;
+- `relative_difference_pct`: conditional minus unconditional mean and median;
+- `sample_count` and `incomplete_future_window_count` for the conditional rows;
+- baseline sample and incomplete-window counts; and
+- `effective_n_note`, which keeps raw counts separate from independent-sample
+  claims.
+
+The baseline uses the same forward-return formula as signal occurrences. A
+window is excluded when its signal-day or future close is missing, zero,
+non-finite, or outside available data. No value is imputed, and excluded counts
+remain visible. Signal-day and forward timestamps are retained in the
+occurrence export. Its horizon-qualified `conditional_return_pct_*`,
+`unconditional_return_pct_*`, and `relative_difference_pct_*` columns carry the
+occurrence return, same-asset baseline mean, and their row-level arithmetic
+difference respectively. If either return is unavailable, the row-level
+relative difference is `None`. Aggregate asset-signal mean and median relative
+metrics remain in the asset-level summaries, pooled summaries, and Markdown
+report.
+
+Asset-level results are primary. Pooled results are occurrence-weighted
+descriptive context only and can hide asset-level heterogeneity. For each
+signal and horizon, the total weight assigned to an asset's unconditional
+distribution equals its count of valid conditional occurrences for that signal
+and horizon. The pooled mean is the resulting weighted empirical mean; the
+pooled median is a deterministic weighted empirical median. Raw baseline
+sample and incomplete-window counts remain counts of the underlying contributing
+asset-day windows, not independent-sample claims. The output reports
+descriptive comparisons only; no inferential tests or confidence intervals are
+calculated.
+
 ## Sample-Size Notes
 
 ### What Sample Size Means Here
@@ -113,9 +168,13 @@ The communication categories are:
 ## Pooled and Asset-Level Results
 
 The pooled summary combines occurrences across the configured assets so that a
-researcher can inspect the overall available sample. The asset-level breakdown
-keeps each asset and signal combination separate. Pooled results should not be
-assumed to apply equally to every asset.
+researcher can inspect secondary descriptive context. The asset-level breakdown
+keeps each asset and signal combination separate and now includes the aligned
+unconditional baseline. For a given signal and horizon, pooled baseline asset
+weights come from valid conditional occurrence counts, not equal asset weights
+and not total unconditional asset-day counts. Pooled results should not be
+assumed to apply equally to every asset or generalized beyond the evaluated
+observations.
 
 The report's asset-level tables provide compact 7-day descriptive statistics,
 while the pooled signal sections provide full statistics for 1-day, 3-day, and
@@ -157,11 +216,12 @@ Both are generated local outputs and are ignored by Git.
 The evaluation is limited by the available historical time period, changing
 market regimes, crypto volatility, asset selection and survivorship
 limitations, indicator warm-up, overlapping forward-return windows,
-non-independent observations, cross-asset dependence, and the simple technical
-rule set. It does not include transaction costs, slippage, taxes, position
-sizing, portfolio simulation, causal inference, a statistical significance
-claim, or an adjusted effective sample-size calculation. Historical results do
-not guarantee future performance.
+non-independent observations, autocorrelation, cross-asset dependence, pooled
+heterogeneity, multiple-horizon interpretation, data-snooping risk, and the
+simple technical rule set. It does not include transaction costs, slippage,
+taxes, position sizing, portfolio simulation, inferential tests, confidence
+intervals, or an adjusted effective sample-size calculation. Historical results
+do not guarantee future performance.
 
 ## Educational Disclaimer
 

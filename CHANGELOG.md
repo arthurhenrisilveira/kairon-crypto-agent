@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.5.0
+
+- Added same-asset, same-horizon unconditional baseline returns for historical signal evaluation.
+- Added asset-level conditional, unconditional, and relative mean/median comparisons.
+- Added explicit raw sample and incomplete future-window counts without imputation.
+- Added secondary occurrence-weighted pooled baseline-relative context.
+- Added signal-day and forward-return timestamps to the historical occurrence export.
+- Preserved existing signal identifiers, strategy rules, indicators, thresholds, and v0.4 output fields.
+- Documented overlapping-window, autocorrelation, cross-asset dependence, pooled-heterogeneity, multiple-testing, and data-snooping limitations.
+- Kept v0.5 descriptive; no inferential tests, confidence intervals, or post-hoc parameter selection were added.
+
 ## v0.4.0
 
 - Added Historical Signal Evaluation as a separate descriptive layer.
